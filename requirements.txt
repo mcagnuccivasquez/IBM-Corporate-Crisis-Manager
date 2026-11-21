@@ -1,0 +1,17 @@
+# ACME Corporate Crisis Manager: Python 3.11+
+# Install:  python -m pip install -r requirements.txt
+# Then once (PDF rendering, A5):  python -m playwright install chromium
+
+# Core (P0)
+anthropic>=2.12,<3          # Claude SDK (llm.py)
+pydantic>=2.11,<3           # contracts.py (needs serialize_by_alias, 2.11+)
+python-dotenv>=1.0          # loads .env (ANTHROPIC_API_KEY)
+pymupdf>=1.24               # KB extraction from PDFs (scripts/extract_kb.py)
+
+# UI + report (P1)
+streamlit>=1.40             # app.py chat UI
+jinja2>=3.1                 # report/template.html
+playwright>=1.45            # HTML -> PDF (Chromium print-to-PDF)
+
+# Tests
+pytest>=8
