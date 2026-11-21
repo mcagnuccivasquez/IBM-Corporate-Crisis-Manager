@@ -12,13 +12,18 @@ title, and a legend on page 1 explains the ID prefixes.
 
 from __future__ import annotations
 
+import asyncio
 import re
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from jinja2 import ChainableUndefined, Environment, FileSystemLoader, pass_context
 from markupsafe import Markup, escape
+
+from src.kb import SOURCE_REGISTRY  # the fixed list of ACME files KB-01 ... KB-13
+from src.report.checks import ID_PATTERN, check_other_agents, known_ids
 
 REPORT_DIR = Path(__file__).resolve().parent
 
@@ -43,7 +48,8 @@ CATEGORY_LABELS = {
     "reference": "Reference",
 }
 BASIS_LABELS = {
-    "company_data": "Case data",
+    "company_data": "ACME data",
+    "incident_evidence": "Case evidence",  # D-013: evidence about the current incident (e.g. U-xx)
     "precedent": "ACME precedent",
     "general_knowledge": "General knowledge (not an ACME fact)",
 }
@@ -61,7 +67,6 @@ DISCLAIMER = (
     "Does not execute recalls, notifications or public statements."
 )
 
-ID_PATTERN = re.compile(r"\b(?:ACT|KB|C|U)-\d+\b")
 _BRACKET = re.compile(r"\[([^\[\]]+)\]")
 
 
@@ -103,14 +108,6 @@ def sort_actions(actions: list[dict]) -> list[dict]:
     )
 
 
-def known_ids(state: dict) -> set[str]:
-    ids = {c.get("claim_id") for c in state.get("claims") or []}
-    ids |= {s.get("source_id") for s in state.get("sources") or []}
-    ids |= {a.get("action_id") for a in state.get("actions") or []}
-    ids.discard(None)
-    return ids
-
-
 def cited_source_ids(state: dict) -> list[str]:
     """Every source ID referenced anywhere in the state, in first-seen order."""
     ids: list[str] = []
@@ -148,7 +145,8 @@ def data_warnings(state: dict) -> list[str]:
     warnings = [f"Field '{f}' is missing from the case data" for f in REQUIRED_FIELDS if f not in state]
     impacts = state.get("impacts") or {}
     if "impacts" in state:
-        warnings += [f"Impact domain '{key}' is missing from the case data" for key, _ in DOMAINS if key not in impacts]
+        # a validated CaseState has every domain key, with None when that assessment is missing
+        warnings += [f"Impact domain '{key}' is missing from the case data" for key, _ in DOMAINS if not impacts.get(key)]
     if "risk" in state and not (state.get("risk") or {}).get("level"):
         warnings.append("Risk level is missing from the case data")
     return warnings
@@ -172,6 +170,9 @@ def risk_css(level: str | None) -> str:
 def _id_html(id_: str, ids: set[str]) -> str:
     if id_ in ids:
         return f'<a class="ref" href="#ref-{id_}">{id_}</a>'
+    if id_ in SOURCE_REGISTRY:
+        # a real ACME file mentioned in the text but not registered in this case: plain, no link
+        return f'<span class="ref">{id_}</span>'
     return f'<span class="ref ref-unknown">{id_}</span>'
 
 
@@ -226,6 +227,7 @@ def build_context(state: Any) -> dict:
         # None = checks never ran (e.g. state rendered without A5); [] = ran, no issues
         "narrative_warnings": report.get("narrative_warnings"),
         "data_warnings": data_warnings(s),
+        "other_agent_warnings": check_other_agents(s),  # safety net, warnings only
         "claim_groups": group_claims(s.get("claims") or []),
         "actions_sorted": actions_sorted,
         "p1_actions": [a for a in actions_sorted if a.get("priority") == "P1" and a.get("status") != "dropped"],
@@ -275,17 +277,14 @@ def render_html(state: Any) -> str:
     return _env().get_template("template.html").render(**ctx)
 
 
-def pdf_path_for(state: Any, cases_dir: str | Path = "cases") -> Path:
+def render_pdf(state: Any, pdf_path: str | Path) -> Path:
+    """Render the report to exactly `pdf_path` (the pipeline decides it: cases/<id>/report_vN.pdf).
+
+    Pipeline interface: render(state, pdf_path) -> Path. Never overwrites an existing file.
+    Works whether or not the caller runs an asyncio event loop (e.g. inside a web UI).
+    """
     s = _to_dict(state)
-    return Path(cases_dir) / s["case_id"] / f"report_v{s['version']}.pdf"
-
-
-def render_pdf(state: Any, cases_dir: str | Path = "cases") -> Path:
-    """Write cases/<case_id>/report_v<N>.pdf. Never overwrites an existing version."""
-    from playwright.sync_api import sync_playwright  # imported here so HTML-only use needs no browser
-
-    s = _to_dict(state)
-    out = pdf_path_for(s, cases_dir)
+    out = Path(pdf_path)
     if out.exists():
         raise FileExistsError(f"{out} already exists; report versions are never overwritten")
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -298,6 +297,20 @@ def render_pdf(state: Any, cases_dir: str | Path = "cases") -> Path:
         f'<span>{s["case_id"]} · v{s["version"]} · page <span class="pageNumber"></span>/'
         '<span class="totalPages"></span></span></div>'
     )
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:  # no event loop in this thread: print directly
+        return _print_pdf(html, footer, out)
+    # Playwright's sync API refuses to run inside an event loop (found in session 2):
+    # do the printing in a separate worker thread, which has no loop.
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        return pool.submit(_print_pdf, html, footer, out).result()
+
+
+def _print_pdf(html: str, footer: str, out: Path) -> Path:
+    """HTML -> PDF with headless Chromium (Playwright)."""
+    from playwright.sync_api import sync_playwright  # imported here so HTML-only use needs no browser
+
     with sync_playwright() as p:
         browser = p.chromium.launch()
         try:
@@ -318,10 +331,10 @@ def render_pdf(state: Any, cases_dir: str | Path = "cases") -> Path:
 
 
 if __name__ == "__main__":
-    # Manual check: python src/report/render.py [state.json] [cases_dir]
+    # Manual check: python -m src.report.render <state.json> <out.pdf>
     import json
     import sys
 
-    src = Path(sys.argv[1]) if len(sys.argv) > 1 else REPORT_DIR / "sample_state_v1_TEMPORARY.json"
-    cases = sys.argv[2] if len(sys.argv) > 2 else "cases"
-    print(render_pdf(json.loads(src.read_text(encoding="utf-8")), cases))
+    if len(sys.argv) != 3:
+        sys.exit("usage: python -m src.report.render <state.json> <out.pdf>")
+    print(render_pdf(json.loads(Path(sys.argv[1]).read_text(encoding="utf-8")), sys.argv[2]))

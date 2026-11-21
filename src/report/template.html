@@ -173,7 +173,7 @@
     <thead><tr><th class="w-lg">Stakeholder</th><th class="w-sm">Type</th><th>Interest</th><th>Impact on them</th><th class="w-lg">ACME contact</th></tr></thead>
     <tbody>
     {% for st in s.stakeholders %}
-      <tr><td>{{ st.name }}</td><td>{{ st.type or NR }}</td><td>{{ st.interest or NR }}</td><td>{{ st.impact or NR }}</td><td>{{ st.acme_contact or NR }}</td></tr>
+      <tr><td>{{ st.name }}</td><td>{{ st.type or NR }}</td><td>{{ (st.interest or NR) | linkify }}</td><td>{{ (st.impact or NR) | linkify }}</td><td>{{ st.acme_contact or NR }}</td></tr>
     {% endfor %}
     </tbody>
   </table>
@@ -203,7 +203,7 @@
             {% for o in a.options_considered %}
             <div class="option {{ 'chosen' if o.chosen }}">
               <strong>{{ "✔ Recommended:" if o.chosen else "○ Alternative:" }}</strong> {{ o.option | linkify }}
-              <span class="muted">· Pros: {{ o.pros or NR }} · Cons: {{ o.cons or NR }}</span>
+              <span class="muted">· Pros: {{ (o.pros or NR) | linkify }} · Cons: {{ (o.cons or NR) | linkify }}</span>
             </div>
             {% endfor %}
           </div>
@@ -356,6 +356,14 @@
   </ul>
   {% else %}
   <p class="empty">No issues found in the case data.</p>
+  {% endif %}
+
+  <h3>Safety net on other agents' texts</h3>
+  <p class="note">Banned phrases (KB-03, KB-09, KB-10), personal data and wording that may blame a customer, in texts written by A2–A4. Warnings only: A5 does not change these texts.</p>
+  {% if other_agent_warnings %}
+  <ul class="warn">{% for w in other_agent_warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+  {% else %}
+  <p class="empty">No issues found.</p>
   {% endif %}
 
   <h3>Unresolved QA notes (A4 Critic)</h3>

@@ -1,21 +1,22 @@
 """Tests for the A5 report renderer (src/report/render.py).
 
-Run: .venv/bin/python -m pytest tests/test_a5_render.py -v
+Case data: tests/fixtures/a5_sample_state_v1.json (ACME facts verified against the KB files;
+scores, actions and narrative are hand-written placeholders, NOT agent results).
+
+Run: python -m pytest tests/test_a5_render.py -v
 """
 
 import copy
 import json
-import sys
 from pathlib import Path
 
 import pytest
 
+from src.contracts import CaseState
+from src.report import render
+
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-
-from src.report import render  # noqa: E402
-
-SAMPLE = ROOT / "src" / "report" / "sample_state_v1_TEMPORARY.json"
+SAMPLE = ROOT / "tests" / "fixtures" / "a5_sample_state_v1.json"
 
 SECTION_HEADINGS = [
     "1. Situation", "2. Evidence", "3. Risk and reasons", "4. Impacts", "5. Stakeholders",
@@ -35,7 +36,7 @@ def make_v2(state, new_level="High"):
     s["risk"]["previous_level"] = "High"
     s["risk"]["level"] = new_level
     s["changelog"].append({"version": 2, "risk_from": "High", "risk_to": new_level, "new_source_ids": [],
-                           "claim_changes": [], "action_changes": ["ACT-002 proposed -> approved"], "summary": None})
+                           "claim_changes": [], "action_changes": ["ACT-002 proposed -> approved"], "summary": ""})
     return s
 
 
@@ -101,6 +102,23 @@ def test_citation_becomes_small_clickable_reference():
 def test_unknown_id_is_not_linked_and_is_marked():
     html = render.linkify("See [C-899].", {"C-001"})
     assert 'ref-unknown">C-899' in html and 'href="#ref-C-899"' not in html
+
+
+def test_real_kb_file_not_registered_in_case_is_not_struck_out():
+    # found with Alibek's S1 fixture: A4's outlook mentions KB-06, a real ACME file
+    html = render.linkify("Do not reuse the #4471 explanation (KB-06).", {"C-001"})
+    assert '<span class="ref">KB-06</span>' in html and "ref-unknown" not in html
+    assert "ref-unknown" in render.linkify("See KB-99.", set())  # not an ACME file
+
+
+def test_ids_in_stakeholder_and_option_texts_are_links(state):
+    s = copy.deepcopy(state)
+    s["stakeholders"][0]["impact"] = "Must approve any hold per KB-12"
+    act_002 = next(a for a in s["actions"] if a["action_id"] == "ACT-002")
+    act_002["options_considered"][0]["pros"] = "Matches KB-13 quantities"
+    html = render.render_html(s)
+    assert "approve any hold per <a class=\"ref\" href=\"#ref-KB-12\">KB-12</a>" in html
+    assert "Matches <a class=\"ref\" href=\"#ref-KB-13\">KB-13</a> quantities" in html
 
 
 def test_linkify_escapes_html():
@@ -190,23 +208,85 @@ def test_cited_but_unregistered_source_is_flagged(state):
     assert "Cited but missing from the source register: KB-99" in html
 
 
-# ---------------------------------------------------------------- PDF file
+# ---------------------------------------------------------------- safety net on other agents' texts
 
-def test_pdf_path():
-    assert render.pdf_path_for({"case_id": "CASE-001", "version": 3}, "cases") == Path("cases/CASE-001/report_v3.pdf")
+def test_safety_net_clean_sample(state):
+    html = render.render_html(state)
+    assert "Safety net on other agents" in html
+    assert render.check_other_agents(state) == []
 
+
+def test_safety_net_flags_other_agents_texts_without_changing_them(state):
+    s = copy.deepcopy(state)
+    act = next(a for a in s["actions"] if a["action_id"] == "ACT-003")
+    act["what_it_does"] = "Statement says the authorities have been notified and asks R. Dubois to call."
+    s["stakeholders"][0]["impact"] = "Damage caused by customer misuse"
+    warnings = render.check_other_agents(s)
+    assert any("ACT-003 what_it_does: banned phrase 'authorities contacted'" in w for w in warnings)
+    assert any("ACT-003 what_it_does: possible personal data: R. Dubois" in w for w in warnings)
+    assert any("may blame a customer" in w for w in warnings)
+    html = render.render_html(s)
+    assert "the authorities have been notified" in html  # A5 never rewrites another agent's text
+
+
+def test_safety_net_ignores_negated_warnings_in_drafts(state):
+    s = copy.deepcopy(state)
+    act = next(a for a in s["actions"] if a["action_id"] == "ACT-003")
+    act["what_it_does"] = "Do not claim 'all units tested' or 'authorities contacted' (KB-10)."
+    assert render.check_other_agents(s) == []
+
+
+# ---------------------------------------------------------------- contract (D-009, D-013)
+
+def test_sample_is_a_valid_case_state(state):
+    CaseState.model_validate(state)
+
+
+def test_renders_a_validated_case_state_object(state):
+    html = render.render_html(CaseState.model_validate(state))
+    assert "PCX-100 stock export" in html and "How to read this report" in html
+    assert "No issues found in the case data" in html
+
+
+def test_incident_evidence_basis_has_a_label(state):
+    html = render.render_html(state)
+    assert "Case evidence" in html  # D-013 basis for U-xx evidence
+    assert "ACME data" in html
+
+
+def test_missing_impact_domain_in_validated_state_is_reported(state):
+    s = CaseState.model_validate(state)
+    s.impacts.economic = None
+    assert "Impact domain &#39;economic&#39; is missing" in render.render_html(s)
+
+
+# ---------------------------------------------------------------- PDF file (pipeline interface)
 
 def test_never_overwrites_existing_version(state, tmp_path):
-    existing = render.pdf_path_for(state, tmp_path)
+    existing = tmp_path / "CASE-001" / "report_v1.pdf"
     existing.parent.mkdir(parents=True)
     existing.write_bytes(b"old")
     with pytest.raises(FileExistsError):
-        render.render_pdf(state, tmp_path)
+        render.render_pdf(state, existing)
     assert existing.read_bytes() == b"old"
 
 
-def test_pdf_is_written(state, tmp_path):
+def test_pdf_renders_inside_a_running_event_loop(state, tmp_path):
+    """Found in session 2: Playwright's sync API fails inside an asyncio loop (possible in a web UI)."""
+    import asyncio
     pytest.importorskip("playwright")
-    out = render.render_pdf(state, tmp_path)
-    assert out == tmp_path / "CASE-001" / "report_v1.pdf"
+    target = tmp_path / "report_v1.pdf"
+
+    async def inside_loop():
+        return render.render_pdf(state, target)
+
+    assert asyncio.run(inside_loop()) == target
+    assert target.read_bytes()[:5] == b"%PDF-"
+
+
+def test_pdf_is_written_to_exactly_the_given_path(state, tmp_path):
+    pytest.importorskip("playwright")
+    target = tmp_path / "somewhere" / "report_v1.pdf"
+    out = render.render_pdf(CaseState.model_validate(state), target)
+    assert out == target
     assert out.read_bytes()[:5] == b"%PDF-"
