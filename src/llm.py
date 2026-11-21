@@ -17,7 +17,8 @@ What it does for you:
   - structured output: the reply must match `output_model`'s JSON schema and is then
     validated with Pydantic (so contract validators such as score = S×L also run).
     On a validation error it retries ONCE, showing the model its reply and the errors.
-  - adaptive thinking + per-agent `effort`; server-side refusal fallback enabled
+  - model per agent (D-012): Sonnet 5.5 by default, Haiku 5.5 for A0*/A5* (see model_for)
+  - adaptive thinking + per-agent `effort`; server-side refusal fallback where the model supports it
   - 429/5xx/overloaded/connection errors are retried by the SDK (max_retries=4)
   - every API call (including failed ones) is logged to cases/<case_id>/trace.jsonl
     with tokens, cache reads/writes and an estimated cost
@@ -50,9 +51,15 @@ from src.kb import ROOT, load_kb_block
 T = TypeVar("T", bound=BaseModel)
 Effort = Literal["low", "medium", "high", "xhigh", "max"]
 
-DEFAULT_MODEL = "claude-opus-5-5"
+# Hybrid setup (D-012): reasoning agents on the main model, simple calls on the light one.
+# Override in .env with ACME_MODEL / ACME_MODEL_LIGHT.
+DEFAULT_MODEL = "claude-sonnet-5-5"
+DEFAULT_LIGHT_MODEL = "claude-haiku-5-5"
+LIGHT_AGENT_PREFIXES = ("A0", "A5")  # A0 intent + answers, A5 report narrative
 DEFAULT_MAX_TOKENS = 32_000  # includes thinking; streamed, so no HTTP timeout risk
 FALLBACK_BETA = "server-side-fallback-2026-07-01"
+# Models that accept the server-side refusal fallback (Haiku 5.5 does not).
+FALLBACK_MODELS = {"claude-opus-5-5", "claude-sonnet-5-5", "claude-opus-5", "claude-fable-5-2", "claude-fable-5-1"}
 PROMPTS_DIR = ROOT / "src" / "prompts"
 
 # USD per million tokens: (input, output, cache read). Cache write (5 min TTL) = 1.25 × input.
@@ -115,8 +122,11 @@ def get_client() -> anthropic.Anthropic:
     return anthropic.Anthropic(max_retries=4)
 
 
-def model_name() -> str:
+def model_for(agent: str) -> str:
+    """Main model for reasoning agents; light model for agents in LIGHT_AGENT_PREFIXES."""
     load_dotenv(ROOT / ".env")
+    if agent.startswith(LIGHT_AGENT_PREFIXES):
+        return os.environ.get("ACME_MODEL_LIGHT", DEFAULT_LIGHT_MODEL)
     return os.environ.get("ACME_MODEL", DEFAULT_MODEL)
 
 
@@ -208,6 +218,7 @@ def call_structured(
     case_id: str | None = None,
     check: Callable[[T], list[str]] | None = None,
     max_tokens: int = DEFAULT_MAX_TOKENS,
+    model: str | None = None,
     client: anthropic.Anthropic | None = None,
 ) -> T:
     """One structured LLM call. Returns a validated `output_model` instance.
@@ -218,9 +229,11 @@ def call_structured(
     effort         "low" for simple calls (intent, report narrative), "high" for analysis
     check          optional extra rules on the parsed output; return a list of problems
                    (e.g. unknown source IDs). Problems trigger the same single retry.
+    model          override; by default model_for(agent) (A0*/A5* -> light model)
     """
     client = client or get_client()
-    model = model_name()
+    model = model or model_for(agent)
+    fallback_args: dict[str, Any] = {"betas": [FALLBACK_BETA], "fallbacks": "default"} if model in FALLBACK_MODELS else {}
     schema = anthropic.transform_schema(output_model)
     system = [
         {"type": "text", "text": shared_system_text(), "cache_control": {"type": "ephemeral"}},
@@ -246,8 +259,7 @@ def call_structured(
                 messages=messages,
                 thinking={"type": "adaptive"},
                 output_config={"effort": effort, "format": {"type": "json_schema", "schema": schema}},
-                betas=[FALLBACK_BETA],
-                fallbacks="default",
+                **fallback_args,
             ) as stream:
                 response = stream.get_final_message()
         except anthropic.APIError as e:

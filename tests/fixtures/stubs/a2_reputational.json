@@ -1,0 +1,28 @@
+{
+  "severity": 3,
+  "likelihood": 2,
+  "score": 6,
+  "severity_reason": "Safety question on a product line in market with public visibility",
+  "likelihood_reason": "Single unverified post, picked up by one outlet; reach still limited",
+  "impacts": [
+    {
+      "description": "Social and press attention on PCX-100 safety in DE",
+      "if_unaddressed": "Story spreads to IT/FR; retailers ask questions",
+      "timeframe": "7d",
+      "stakeholders": [
+        "customers DE",
+        "retailers"
+      ],
+      "source_ids": [
+        "U-02",
+        "U-03",
+        "KB-08"
+      ],
+      "basis": "precedent"
+    }
+  ],
+  "floor_triggers": [
+    "F1"
+  ],
+  "evidence_confidence": "low"
+}

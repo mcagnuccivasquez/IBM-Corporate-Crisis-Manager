@@ -425,6 +425,38 @@ class CaseState(_Model):
         return self.model_dump_json(indent=2)
 
 
+# ---------------------------------------------------------------------------
+# Agent outputs: what each agent returns to A0 (PROJECT.md §3.3 "Writes" column).
+# Agents return only new or changed items; A0 merges them into CaseState by ID
+# (never deletes) and enforces the merge rules. risk is never an agent output.
+# ---------------------------------------------------------------------------
+
+
+class A1Output(_Model):
+    sources: list[Source] = Field(default_factory=list)
+    claims: list[Claim] = Field(default_factory=list)
+    open_questions: list[OpenQuestion] = Field(default_factory=list)
+
+
+# A2a/b/c each return one DomainImpact (A0 stores it under impacts.<domain>).
+
+
+class A3Output(_Model):
+    actions: list[Action] = Field(default_factory=list)
+    stakeholders: list[Stakeholder] = Field(default_factory=list)  # full current list (replaces)
+
+
+class A4Output(_Model):
+    qa: QA
+    outlook: Outlook
+    reopen_conditions: list[str] = Field(default_factory=list)  # used when the case is closed
+
+
+class A5Output(_Model):
+    narrative: dict[str, str] = Field(default_factory=dict)  # report section -> text
+    changes_summary: str = ""  # the "why" for changelog[-1].summary
+
+
 def new_case(case_id: str) -> CaseState:
     """Empty case at version 0. A0 bumps to version 1 on the first versioned turn."""
     return CaseState(case_id=case_id, version=0)

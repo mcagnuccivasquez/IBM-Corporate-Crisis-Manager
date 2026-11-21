@@ -52,7 +52,8 @@ class FakeClient:
 @pytest.fixture(autouse=True)
 def tmp_cases(tmp_path, monkeypatch):
     monkeypatch.setenv("ACME_CASES_DIR", str(tmp_path))
-    monkeypatch.setenv("ACME_MODEL", "claude-opus-5-5")
+    monkeypatch.setenv("ACME_MODEL", "claude-sonnet-5-5")
+    monkeypatch.setenv("ACME_MODEL_LIGHT", "claude-haiku-5-5")
     return tmp_path
 
 
@@ -71,7 +72,7 @@ def test_success_request_shape_and_trace(tmp_cases):
     assert out == Out(summary="ok", source_ids=["KB-01"])
 
     req = client.calls[0]
-    assert req["model"] == "claude-opus-5-5"
+    assert req["model"] == "claude-sonnet-5-5"
     assert req["thinking"] == {"type": "adaptive"}
     assert req["output_config"]["effort"] == "high"
     assert req["output_config"]["format"]["type"] == "json_schema"
@@ -85,6 +86,15 @@ def test_success_request_shape_and_trace(tmp_cases):
     (rec,) = _trace(tmp_cases)
     assert rec["agent"] == "A1" and rec["ok"] is True
     assert rec["cache_read_input_tokens"] == 6000 and rec["cost_usd"] > 0
+
+
+def test_light_agents_use_haiku_without_fallback():
+    client = FakeClient(_response(GOOD, model="claude-haiku-5-5"), _response(GOOD))
+    llm.call_structured("A0-intent", "p", "x", Out, "low", client=client)
+    llm.call_structured("A5", "p", "x", Out, "low", client=client, model="claude-sonnet-5-5")  # explicit override
+    haiku, sonnet = client.calls
+    assert haiku["model"] == "claude-haiku-5-5" and "fallbacks" not in haiku and "betas" not in haiku
+    assert sonnet["model"] == "claude-sonnet-5-5" and sonnet["fallbacks"] == "default"
 
 
 def test_kb_prefix_identical_across_agents():

@@ -1,0 +1,90 @@
+{
+  "actions": [
+    {
+      "action_id": "ACT-001",
+      "title": "Contact @kai_b privately and request the unit and label photo",
+      "what_it_does": "Gets the physical unit to Quality and checks it is a genuine PCX-100",
+      "owner": "Tom Weber (Customer Care)",
+      "approver": null,
+      "timing": "within 24h",
+      "priority": "P1",
+      "domains": [
+        "reputational"
+      ],
+      "status": "proposed",
+      "options_considered": [],
+      "basis_source_ids": [
+        "KB-03",
+        "KB-08"
+      ],
+      "expected_effect": "Confirms or rules out the smoke claim",
+      "result_evidence_source_ids": [],
+      "status_history": [
+        {
+          "version": 1,
+          "from": null,
+          "to": "proposed",
+          "reason": "Smoke report raises priority"
+        }
+      ]
+    },
+    {
+      "action_id": "ACT-002",
+      "title": "Warehouse hold on batch PCX-2609-B (3,000 units, Frankfurt)",
+      "what_it_does": "Stops new shipments of the suspect batch while Quality tests samples",
+      "owner": "Luca Ferri (Supply Chain)",
+      "approver": "Elena Rossi (COO)",
+      "timing": "within 24h",
+      "priority": "P1",
+      "domains": [
+        "economic",
+        "legal_regulatory"
+      ],
+      "status": "proposed",
+      "options_considered": [
+        {
+          "option": "Hold both batches",
+          "pros": "Maximum caution",
+          "cons": "€10,000 setup, blocks 5,000 units",
+          "chosen": false
+        },
+        {
+          "option": "Hold PCX-2609-B only",
+          "pros": "Lower cost",
+          "cons": "Assumes batch A is unaffected",
+          "chosen": true
+        }
+      ],
+      "basis_source_ids": [
+        "KB-12",
+        "KB-13"
+      ],
+      "expected_effect": "No further exposure from held stock",
+      "result_evidence_source_ids": [],
+      "status_history": [
+        {
+          "version": 1,
+          "from": null,
+          "to": "proposed",
+          "reason": "F1 floor applies"
+        }
+      ]
+    }
+  ],
+  "stakeholders": [
+    {
+      "name": "Customers in DE/IT/FR",
+      "type": "external",
+      "interest": "Safe chargers",
+      "impact": "Possible safety risk",
+      "acme_contact": "Tom Weber (Customer Care)"
+    },
+    {
+      "name": "Quality team",
+      "type": "internal",
+      "interest": "Root cause",
+      "impact": "Sample testing workload",
+      "acme_contact": null
+    }
+  ]
+}

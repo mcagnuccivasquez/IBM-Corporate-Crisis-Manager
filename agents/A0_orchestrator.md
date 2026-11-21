@@ -45,7 +45,7 @@ Output schema:
 
 ## 4. LLM wrapper (`llm.py`) — shared by every agent
 One helper, e.g. `call_structured(agent_name, system_prompt, user_content, output_model, effort)`, that:
-- uses the official `anthropic` SDK, model from config (default `claude-opus-5-5`), adaptive thinking, `output_config.effort` per agent;
+- uses the official `anthropic` SDK, model per agent from config (D-012: `claude-sonnet-5-5` for A1–A4, `claude-haiku-5-5` for A0/A5), adaptive thinking, `output_config.effort` per agent;
 - returns a validated Pydantic object (structured outputs / `messages.parse`);
 - puts the **KB text block first with cache_control** so every agent call reuses the cache (stable prefix: KB → agent prompt → volatile state/turn last);
 - handles `stop_reason == "refusal"` and retries on 429/5xx;
