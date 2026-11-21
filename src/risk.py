@@ -188,15 +188,15 @@ def compute_risk(
     level_rank = _level_rank(_score_to_level(max_score))
     reasons: list[str] = []
 
-    domain_names = {
-        id(state.impacts.reputational): "reputational",
-        id(state.impacts.economic): "economic",
-        id(state.impacts.legal_regulatory): "legal_regulatory",
+    domain_labels = {
+        id(state.impacts.reputational): "Reputational",
+        id(state.impacts.economic): "Economic",
+        id(state.impacts.legal_regulatory): "Legal/regulatory",
     }
     for d in domains:
-        name = domain_names.get(id(d), "unknown")
+        label = domain_labels.get(id(d), "Unknown")
         reasons.append(
-            f"{name.capitalize()} {d.severity}×{d.likelihood}={d.score} → {_score_to_level(d.score)}"
+            f"{label} {d.severity}×{d.likelihood}={d.score} → {_score_to_level(d.score)}"
         )
 
     # ------------------------------------------------------------------
@@ -252,12 +252,25 @@ def compute_risk(
             if not disproved_or_downgraded and not verified_effective:
                 # Block the drop — keep the previous level.
                 reasons.append(
-                    f"F4 de-escalation guard: level would drop {prev_level}→"
-                    f"{_rank_to_level(level_rank)} but no claim was disproved/downgraded and no "
-                    "action reached verified_effective in this turn. Level held at "
-                    f"{prev_level} (PROJECT §6 F4)."
+                    f"F4: {prev_level}→{_rank_to_level(level_rank)} blocked — "
+                    "no claim disproved/downgraded and no action verified_effective"
                 )
                 level_rank = prev_rank
+            else:
+                # Drop is earned — name the justification (PROJECT §6: "must name which").
+                justifications = [
+                    c.claim_id for c in claim_changes
+                    if c.to_status in ("disproved", "misleading")
+                    or (c.from_status == "confirmed" and c.to_status == "unconfirmed")
+                ]
+                justifications += [
+                    a.action_id for a in action_changes
+                    if a.to_status == "verified_effective"
+                ]
+                reasons.append(
+                    f"F4: drop {prev_level}→{_rank_to_level(level_rank)} allowed — "
+                    + ", ".join(justifications)
+                )
 
     computed_level: RiskLevel = _rank_to_level(level_rank)
 

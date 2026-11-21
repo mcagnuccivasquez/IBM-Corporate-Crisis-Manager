@@ -218,7 +218,8 @@ class TestF4Guard:
             action_changes=[],
         )
         assert result.level == "Low"
-        assert not any("F4" in r for r in result.reasons)
+        assert any("F4: drop" in r and "allowed" in r for r in result.reasons)
+        assert any("C-001" in r for r in result.reasons)
 
     def test_f4_allows_drop_when_action_verified_effective(self):
         """Level may drop if an action reached verified_effective."""
@@ -310,7 +311,8 @@ class TestF4AutoDerivation:
         assert result.level == "Low", (
             f"Disproved claim (auto-derived) should allow de-escalation, got {result.level}"
         )
-        assert not any("F4" in r for r in result.reasons)
+        assert any("F4: drop" in r and "allowed" in r for r in result.reasons)
+        assert any("C-001" in r for r in result.reasons)
 
     def test_no_disprove_blocks_drop_via_auto_derivation(self):
         """No claim changes in state → F4 blocks the drop (auto-derivation returns no changes)."""

@@ -9,7 +9,7 @@ Architecture
   run(state, turn, domain)  — public entry point called by A0 pipeline for each domain.
   _build_prompt()           — assembles the system prompt from the common + domain-specific parts.
   _build_user_content()     — builds the volatile user-turn content block.
-  _stub_domain_assessment() — deterministic stub used when no Anthropic API key is present.
+  _stub_domain_assessment() — deterministic stub used by the pipeline's "Stub agents" switch.
 
 The pipeline (src/pipeline.py) calls run() three times in parallel (once per domain) and
 then calls compute_risk() from src/risk.py to combine the three DomainImpact results.
@@ -19,18 +19,16 @@ Signature (matches pipeline.py AgentSet.a2 slot):
 
 LLM calls
 ---------
-Imports call_structured from src/llm.py (owned by A0/Matteo).
-If the import fails or ANTHROPIC_API_KEY is not set, _STUB_MODE=True routes through a
-deterministic stub so A2 is fully testable without an Anthropic key.
+Always calls call_structured from src/llm.py. Without a valid ANTHROPIC_API_KEY that
+raises a clear LLMError — it never silently returns [STUB] scores in the live app.
+Cost-free / CI runs use the pipeline's built-in stub switch (--stubs / use_stubs=True),
+which replaces A2 with stubs.a2 before run() is ever called.
 """
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import Optional
-
-from pydantic import BaseModel, Field
 
 from src.contracts import (
     CaseState,
@@ -45,17 +43,7 @@ from src.contracts import (
     TurnInput,
 )
 
-# ---------------------------------------------------------------------------
-# Stub mode — used when llm.py is not yet available or ANTHROPIC_API_KEY unset
-# ---------------------------------------------------------------------------
-_STUB_MODE: bool = not os.environ.get("ANTHROPIC_API_KEY")
-
-try:
-    from src.llm import call_structured, load_prompt  # type: ignore[import]
-except ImportError:
-    _STUB_MODE = True
-    call_structured = None  # type: ignore[assignment]
-    load_prompt = None  # type: ignore[assignment]
+from src.llm import call_structured  # type: ignore[import]
 
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
@@ -80,9 +68,6 @@ def run(state: CaseState, turn: TurnInput, domain: Domain) -> DomainImpact:
     """
     active_claims = [c for c in state.claims if c.status not in ("disproved", "misleading")]
     prev_domain = _prev_domain(state, domain)
-
-    if _STUB_MODE or call_structured is None:
-        return _stub_domain_assessment(domain, active_claims, prev_domain)
 
     system_prompt = _build_prompt(domain, prev_domain, state.focus)
     user_content = _build_user_content(domain, active_claims, state.sources, prev_domain)

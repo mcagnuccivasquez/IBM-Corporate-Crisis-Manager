@@ -1,15 +1,16 @@
 """
-test_a2_integration.py — Integration tests for the A2 agent (stub mode, no API key required).
+test_a2_integration.py — Integration tests for A2 stub logic and risk.py.
 
-These tests run a2_impact.run() against fixture CaseStates and verify that:
-  - The output schema is valid (Pydantic validates it).
-  - Risk levels are consistent with risk.py.
-  - Evidence distinctions are preserved (confirmed vs unconfirmed vs disproved).
-  - Historical examples are not treated as current evidence.
-  - Financial estimates are only made when KB data supports them.
-  - Floor triggers are reported when safety keywords are present.
+Tests call _stub_domain_assessment() directly (the deterministic fallback also used
+by stubs.a2 in the pipeline). This avoids any LLM call while still exercising the
+full domain-scoring and risk-computation path.
 
-All tests use the STUB domain assessor — no Anthropic API key needed.
+Covers:
+  - Output schema validity (Pydantic validates DomainImpact).
+  - Risk levels consistent with risk.py.
+  - Evidence distinctions (confirmed vs unconfirmed vs disproved).
+  - Historical examples not inflating risk.
+  - Floor triggers reported when safety keywords present.
 
 Run with:
     python -m pytest tests/test_a2_integration.py -v
@@ -17,12 +18,8 @@ Run with:
 
 from __future__ import annotations
 
-import os
 import pytest
 from datetime import datetime
-
-# Force stub mode for all tests (no live LLM calls)
-os.environ.pop("ANTHROPIC_API_KEY", None)
 
 from src.contracts import (
     CaseState,
@@ -33,10 +30,9 @@ from src.contracts import (
     Impacts,
     Risk,
     Source,
-    TurnInput,
     new_case,
 )
-from src.agents.a2_impact import run
+from src.agents.a2_impact import _stub_domain_assessment
 from src.risk import compute_risk
 
 
@@ -51,10 +47,6 @@ def _base_state(version: int = 1, claims=None, sources=None, prev_risk: Risk | N
     state.claims = claims or []
     state.risk = prev_risk
     return state
-
-
-def _turn() -> TurnInput:
-    return TurnInput(intent="NEW_INFO", user_text="New incident evidence submitted.")
 
 
 def _source(source_id: str, category="incident_evidence", time_relevance="current") -> Source:
@@ -94,22 +86,26 @@ def _claim(
     )
 
 
+def _active_claims(state: CaseState) -> list[Claim]:
+    return [c for c in state.claims if c.status not in ("disproved", "misleading")]
+
+
 def _run_all(state: CaseState) -> tuple[DomainImpact, DomainImpact, DomainImpact]:
-    """Helper: run all three domains and return (rep, eco, leg)."""
-    turn = _turn()
-    rep = run(state, turn, "reputational")
-    eco = run(state, turn, "economic")
-    leg = run(state, turn, "legal_regulatory")
+    """Helper: run stub assessor for all three domains and return (rep, eco, leg)."""
+    claims = _active_claims(state)
+    rep = _stub_domain_assessment("reputational", claims, None)
+    eco = _stub_domain_assessment("economic", claims, None)
+    leg = _stub_domain_assessment("legal_regulatory", claims, None)
     return rep, eco, leg
 
 
 def _risk_from_all(state: CaseState, prev: CaseState | None = None) -> Risk:
-    """Run all three domains into state.impacts, then compute risk."""
-    turn = _turn()
+    """Run stub assessor for all three domains into state.impacts, then compute risk."""
+    claims = _active_claims(state)
     state.impacts = Impacts(
-        reputational=run(state, turn, "reputational"),
-        economic=run(state, turn, "economic"),
-        legal_regulatory=run(state, turn, "legal_regulatory"),
+        reputational=_stub_domain_assessment("reputational", claims, None),
+        economic=_stub_domain_assessment("economic", claims, None),
+        legal_regulatory=_stub_domain_assessment("legal_regulatory", claims, None),
     )
     return compute_risk(state, prev)
 
