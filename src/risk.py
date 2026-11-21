@@ -25,14 +25,15 @@ Scoring rationale (PROJECT §6):
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 
 from src.contracts import (
-    DomainAssessment,
-    EvidenceConfidence,
-    FloorTrigger,
-    RiskBlock,
+    CaseState,
+    Confidence,
+    DomainImpact,
+    FloorId,
+    Risk,
     RiskLevel,
 )
 
@@ -63,9 +64,9 @@ def _rank_to_level(rank: int) -> RiskLevel:
     return {1: "Low", 2: "Medium", 3: "High", 4: "Critical"}[rank]
 
 
-def _lowest_confidence(assessments: list[DomainAssessment]) -> EvidenceConfidence:
+def _lowest_confidence(assessments: list[DomainImpact]) -> Confidence:
     """Return the weakest evidence_confidence across the driving assessments."""
-    order = {"low": 0, "moderate": 1, "high": 2}
+    order = {"low": 0, "medium": 1, "high": 2}
     if not assessments:
         return "low"
     return min(assessments, key=lambda a: order[a.evidence_confidence]).evidence_confidence
@@ -92,32 +93,42 @@ class ActionChange:
 
 
 def compute_risk(
-    domains: list[DomainAssessment],
-    prev_level: Optional[RiskLevel] = None,
+    state: CaseState,
+    prev: Optional[CaseState] = None,
     claim_changes: Optional[list[ClaimChange]] = None,
     action_changes: Optional[list[ActionChange]] = None,
-) -> RiskBlock:
+) -> Risk:
     """
-    Compute the overall risk level from three domain assessments.
+    Compute the overall risk level from the domain impacts stored in state.impacts.
 
     Parameters
     ----------
-    domains:        List of DomainAssessment objects (A2a/b/c output).
-                    May be a partial list (e.g. only one domain assessed so far).
-    prev_level:     The risk level from the previous CaseState version, or None for v1.
+    state:          Current CaseState (after A2a/b/c have written their DomainImpact results).
+    prev:           Previous CaseState version, or None for v1.
     claim_changes:  Claim status changes in this turn (from A1 output).
     action_changes: Action status changes in this turn (from A3 output).
 
     Returns
     -------
-    RiskBlock — written directly into CaseState.risk by A0. Never written by an LLM.
+    Risk — written directly into CaseState.risk by A0. Never written by an LLM.
     """
     claim_changes = claim_changes or []
     action_changes = action_changes or []
 
+    prev_level = prev.risk.level if (prev and prev.risk) else None
+
+    domains: list[DomainImpact] = [
+        d for d in (
+            state.impacts.reputational,
+            state.impacts.economic,
+            state.impacts.legal_regulatory,
+        )
+        if d is not None
+    ]
+
     if not domains:
         # Edge case: called before any domain assessment is available.
-        return RiskBlock(
+        return Risk(
             level="Low",
             previous_level=prev_level,
             max_domain_score=0,
@@ -129,8 +140,8 @@ def compute_risk(
     # ------------------------------------------------------------------
     # Step 1 — domain scores (Severity × Likelihood)
     # ------------------------------------------------------------------
+    # DomainImpact.score is auto-set by its validator, but defensively recompute.
     for d in domains:
-        # Defensively recompute; A2 sub-agents set the field but risk.py is authoritative.
         d.score = d.severity * d.likelihood
 
     max_score = max(d.score for d in domains)
@@ -142,19 +153,25 @@ def compute_risk(
     level_rank = _level_rank(_score_to_level(max_score))
     reasons: list[str] = []
 
+    domain_names = {
+        id(state.impacts.reputational): "reputational",
+        id(state.impacts.economic): "economic",
+        id(state.impacts.legal_regulatory): "legal_regulatory",
+    }
     for d in domains:
+        name = domain_names.get(id(d), "unknown")
         reasons.append(
-            f"{d.domain.capitalize()}: S{d.severity}×L{d.likelihood}={d.score} "
+            f"{name.capitalize()}: S{d.severity}×L{d.likelihood}={d.score} "
             f"→ {_score_to_level(d.score)}"
         )
 
     # ------------------------------------------------------------------
     # Step 3 — floor overrides
     # ------------------------------------------------------------------
-    floors_applied: list[FloorTrigger] = []
+    floors_applied: list[FloorId] = []
 
     # Collect all floor_triggers across all domains
-    all_triggers: set[FloorTrigger] = set()
+    all_triggers: set[FloorId] = set()
     for d in domains:
         all_triggers.update(d.floor_triggers)
 
@@ -225,7 +242,7 @@ def compute_risk(
     # ------------------------------------------------------------------
     evidence_confidence = _lowest_confidence(driving)
 
-    return RiskBlock(
+    return Risk(
         level=computed_level,
         previous_level=prev_level,
         max_domain_score=max_score,

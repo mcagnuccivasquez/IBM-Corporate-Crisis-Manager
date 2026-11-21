@@ -14,7 +14,7 @@ _Last updated: 2026-11-21 18:05 · by: Matteo (p0-foundations session)_
 | Foundations (`contracts.py`, `llm.py`, `kb.py`, KB extraction) | A0 | **Matteo** | in review (branch `matteo/p0-foundations`) | Open PR → main and merge; live API verified (cache hit, $0.03) |
 | A0 Orchestrator (`pipeline.py`, `app.py`, `diff.py`) + integration | A0 | **Matteo** | in progress | `pipeline.py` + `diff.py` + stubs done (full turn runs on stubs); next: `app.py` (Streamlit) |
 | A1 Evidence Analyst | A1 | **Giacomo** | not started | Prompt + output model (needed for Playback 2) |
-| A2a/b/c Impact assessors + `risk.py` | A2 | **Junda** | in progress | `risk.py` ✅ · `a2_impact.py` ✅ · prompts ✅ · 52 tests passing; needs LLM wiring when `llm.py` lands |
+| A2a/b/c Impact assessors + `risk.py` | A2 | **Junda** | in progress | Merged P0 foundations ✅ · migrated to official schema ✅ · LLM wired ✅ · 120 tests passing; needs end-to-end test once A1 (Giacomo) lands |
 | A5 Report Writer (template + PDF) | A5 | **Serdar** | not started | HTML template + PDF from a fixture state (needed for Playback 2) |
 | A3 Action Planner | A3 | **Serdar** | not started | After Playback 2 (25–28 Nov) |
 | A4 Critic & Outlook | A4 | **Alibek** | not started | After Playback 2 (25–28 Nov) |
@@ -49,6 +49,7 @@ Status values: not started · in progress · in review (PR open) · done · bloc
 3. Who presents at Playback 2, and who owns the demo script?
 
 ## Recent sessions (newest first, keep 10)
+- 2026-11-22 · Junda · A2 LLM wiring & contract migration: merged P0 foundations, migrated schema, wired call_structured, 120 tests → `sessions/2026-11-22_junda_a2-llm-wiring.md`
 - 2026-11-21 · Matteo · P0 foundations: contracts, KB extraction, llm.py (live-tested), pipeline + stubs, hybrid models (D-009…D-012) → `sessions/2026-11-21_matteo_p0-foundations.md`
 - 2026-11-21 · Junda · A2 impact & risk: risk.py, a2_impact.py, prompts, contracts stub, 52 tests → `sessions/2026-11-21_junda_a2-impact-risk.md`
 - 2026-11-21 · Matteo · director setup: plan review, architecture, all specs → `sessions/2026-11-21_lead_director-setup.md`

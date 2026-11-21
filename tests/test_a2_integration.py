@@ -27,30 +27,30 @@ os.environ.pop("ANTHROPIC_API_KEY", None)
 from src.contracts import (
     CaseState,
     Claim,
-    ClaimHistory,
-    DomainAssessment,
-    ImpactsBlock,
-    RiskBlock,
+    ClaimChange,
+    Domain,
+    DomainImpact,
+    Impacts,
+    Risk,
     Source,
     TurnInput,
+    new_case,
 )
-from src.agents.a2_impact import run, A2Output
+from src.agents.a2_impact import run
+from src.risk import compute_risk
 
 
 # ---------------------------------------------------------------------------
 # Shared fixture builder
 # ---------------------------------------------------------------------------
 
-def _base_state(version: int = 1, claims=None, sources=None, prev_risk=None) -> CaseState:
-    return CaseState(
-        case_id="CASE-TEST",
-        version=version,
-        created_at=datetime(2026, 11, 21),
-        updated_at=datetime(2026, 11, 21),
-        sources=sources or [],
-        claims=claims or [],
-        risk=prev_risk,
-    )
+def _base_state(version: int = 1, claims=None, sources=None, prev_risk: Risk | None = None) -> CaseState:
+    state = new_case("CASE-001")
+    state.version = version
+    state.sources = sources or []
+    state.claims = claims or []
+    state.risk = prev_risk
+    return state
 
 
 def _turn() -> TurnInput:
@@ -89,7 +89,29 @@ def _claim(
         market=market,
         first_seen_version=version,
         last_changed_version=version,
+        change_history=[ClaimChange(version=version, **{"from": None}, to=status,
+                                     reason="initial", source_ids=source_ids or [f"U-0{claim_id[-1]}"])],
     )
+
+
+def _run_all(state: CaseState) -> tuple[DomainImpact, DomainImpact, DomainImpact]:
+    """Helper: run all three domains and return (rep, eco, leg)."""
+    turn = _turn()
+    rep = run(state, turn, "reputational")
+    eco = run(state, turn, "economic")
+    leg = run(state, turn, "legal_regulatory")
+    return rep, eco, leg
+
+
+def _risk_from_all(state: CaseState, prev: CaseState | None = None) -> Risk:
+    """Run all three domains into state.impacts, then compute risk."""
+    turn = _turn()
+    state.impacts = Impacts(
+        reputational=run(state, turn, "reputational"),
+        economic=run(state, turn, "economic"),
+        legal_regulatory=run(state, turn, "legal_regulatory"),
+    )
+    return compute_risk(state, prev)
 
 
 # ---------------------------------------------------------------------------
@@ -108,22 +130,22 @@ class TestStrongConfirmedEvidence:
                    domains=["reputational", "economic", "legal_regulatory"]),
         ]
         state = _base_state(claims=claims, sources=[_source("U-01")])
-        output: A2Output = run(state, _turn())
+        risk = _risk_from_all(state)
 
-        assert output.risk.level in ("High", "Critical")
-        assert output.impacts.reputational is not None
-        assert output.impacts.economic is not None
-        assert output.impacts.legal_regulatory is not None
+        assert risk.level in ("High", "Critical")
+        assert state.impacts.reputational is not None
+        assert state.impacts.economic is not None
+        assert state.impacts.legal_regulatory is not None
 
     def test_output_schema_valid(self):
-        """Output must be a valid A2Output (Pydantic validates all fields)."""
+        """Output must be a valid DomainImpact (Pydantic validates all fields)."""
         claims = [_claim("C-001", "confirmed smoke incident",
                          status="confirmed", strength="strong")]
         state = _base_state(claims=claims, sources=[_source("U-01")])
-        output = run(state, _turn())
-        # If this doesn't raise, schema is valid
-        assert isinstance(output, A2Output)
-        assert isinstance(output.risk, RiskBlock)
+        rep, eco, leg = _run_all(state)
+        assert isinstance(rep, DomainImpact)
+        assert isinstance(eco, DomainImpact)
+        assert isinstance(leg, DomainImpact)
 
 
 # ---------------------------------------------------------------------------
@@ -138,24 +160,26 @@ class TestUnconfirmedAllegations:
                    status="unconfirmed", strength="weak"),
         ]
         state = _base_state(claims=claims, sources=[_source("U-01")])
-        output = run(state, _turn())
+        risk = _risk_from_all(state)
 
-        assert output.risk.level != "Critical", (
+        assert risk.level != "Critical", (
             "A single unconfirmed allegation must not produce Critical"
         )
 
     def test_evidence_confidence_low(self):
         claims = [_claim("C-001", "allegation only", status="unconfirmed", strength="weak")]
         state = _base_state(claims=claims)
-        output = run(state, _turn())
-        assert output.risk.evidence_confidence == "low"
+        risk = _risk_from_all(state)
+        assert risk.evidence_confidence == "low"
 
-    def test_stakeholders_populated(self):
-        """Even with weak evidence, stakeholder list must not be empty."""
+    def test_stakeholders_check_domain_runs(self):
+        """Even with weak evidence, all three domains must return valid DomainImpact."""
         claims = [_claim("C-001", "allegation", status="unconfirmed", strength="weak", market="DE")]
         state = _base_state(claims=claims)
-        output = run(state, _turn())
-        assert len(output.stakeholders) > 0
+        rep, eco, leg = _run_all(state)
+        assert rep is not None
+        assert eco is not None
+        assert leg is not None
 
 
 # ---------------------------------------------------------------------------
@@ -175,9 +199,9 @@ class TestContradictoryMisleadingEvidence:
                    status="unconfirmed", strength="weak"),
         ]
         state = _base_state(claims=claims)
-        output = run(state, _turn())
+        risk = _risk_from_all(state)
         # Misleading claim is filtered out; only C-002 remains
-        assert output.risk.level in ("Low", "Medium")
+        assert risk.level in ("Low", "Medium")
 
     def test_disproved_claim_excluded(self):
         """Disproved claims must be filtered before domain assessment."""
@@ -186,8 +210,8 @@ class TestContradictoryMisleadingEvidence:
                    status="disproved", strength="weak"),
         ]
         state = _base_state(claims=claims)
-        output = run(state, _turn())
-        assert output.risk.level in ("Low", "Medium")
+        risk = _risk_from_all(state)
+        assert risk.level in ("Low", "Medium")
 
 
 # ---------------------------------------------------------------------------
@@ -198,7 +222,7 @@ class TestMissingFinancialInfo:
     def test_economic_impact_present_even_without_financial_claims(self):
         """
         When no financial claims exist, economic assessment still runs but
-        should not invent numbers.  The stub returns a generalised impact description.
+        should not invent numbers. The stub returns a generalised impact description.
         """
         claims = [
             _claim("C-001", "PCX-100 overheating complaint",
@@ -206,8 +230,7 @@ class TestMissingFinancialInfo:
                    status="unconfirmed", strength="weak"),
         ]
         state = _base_state(claims=claims)
-        output = run(state, _turn())
-        eco = output.impacts.economic
+        _, eco, _ = _run_all(state)
         assert eco is not None
         # Stub must flag "[STUB]" or similar — in production the LLM must follow
         # the economic lens rules (KB-12 ranges, no invented figures)
@@ -218,9 +241,8 @@ class TestMissingFinancialInfo:
         claims = [_claim("C-001", "social media post about smell",
                          domains=["reputational"], status="unconfirmed")]
         state = _base_state(claims=claims)
-        output = run(state, _turn())
-        # Stub falls back to all claims → severity 2 (unconfirmed)
-        assert output.impacts.economic is not None
+        _, eco, _ = _run_all(state)
+        assert eco is not None
 
 
 # ---------------------------------------------------------------------------
@@ -236,8 +258,7 @@ class TestUnconfirmedRegulatoryExposure:
                    domains=["reputational", "legal_regulatory"]),
         ]
         state = _base_state(claims=claims)
-        output = run(state, _turn())
-        leg = output.impacts.legal_regulatory
+        _, _, leg = _run_all(state)
         assert leg is not None
         # Must not say the regulatory action is confirmed
         for item in leg.impacts:
@@ -254,14 +275,17 @@ class TestUnconfirmedRegulatoryExposure:
                    domains=["reputational", "legal_regulatory"]),
         ]
         state = _base_state(claims=claims)
-        output = run(state, _turn())
+        rep, eco, leg = _run_all(state)
+        state.impacts = Impacts(reputational=rep, economic=eco, legal_regulatory=leg)
+        risk = compute_risk(state)
+
         # F1 must appear in at least one domain
-        all_floors = set()
-        for d in [output.impacts.reputational, output.impacts.legal_regulatory]:
+        all_floors: set[str] = set()
+        for d in [rep, leg]:
             if d:
                 all_floors.update(d.floor_triggers)
         assert "F1" in all_floors
-        assert output.risk.level == "High"
+        assert risk.level == "High"
 
 
 # ---------------------------------------------------------------------------
@@ -277,8 +301,8 @@ class TestNewEvidenceChangesRisk:
         # Version 1 state
         claims_v1 = [_claim("C-001", "PCX-100 overheating", status="unconfirmed", strength="weak")]
         state_v1 = _base_state(version=1, claims=claims_v1)
-        out_v1 = run(state_v1, _turn())
-        level_v1 = out_v1.risk.level
+        risk_v1 = _risk_from_all(state_v1)
+        level_v1 = risk_v1.level
 
         # Version 2: claim upgraded to confirmed
         claims_v2 = [
@@ -286,12 +310,12 @@ class TestNewEvidenceChangesRisk:
                    status="confirmed", strength="strong",
                    version=2),
         ]
-        state_v2 = _base_state(version=2, claims=claims_v2, prev_risk=out_v1.risk)
-        out_v2 = run(state_v2, _turn())
+        state_v2 = _base_state(version=2, claims=claims_v2, prev_risk=risk_v1)
+        risk_v2 = _risk_from_all(state_v2, prev=state_v1)
 
         rank = {"Low": 1, "Medium": 2, "High": 3, "Critical": 4}
-        assert rank[out_v2.risk.level] > rank[level_v1], (
-            f"Risk should increase: {level_v1} → {out_v2.risk.level}"
+        assert rank[risk_v2.level] > rank[level_v1], (
+            f"Risk should increase: {level_v1} → {risk_v2.level}"
         )
 
 
@@ -303,25 +327,25 @@ class TestNewEvidenceChangesExplanationNotLevel:
     def test_second_independent_report_same_level_different_explanation(self):
         """
         Adding a second independent unconfirmed report should not necessarily
-        change the level but should populate change_vs_previous in the domain.
-        In stub mode, the level may stay the same while the claim count changes.
+        change the level. In stub mode, the level may stay the same while the
+        claim count changes.
         """
         claims_v1 = [_claim("C-001", "single smoke report", status="unconfirmed")]
         state_v1 = _base_state(version=1, claims=claims_v1)
-        out_v1 = run(state_v1, _turn())
+        risk_v1 = _risk_from_all(state_v1)
 
         # Second report added — same level expected
         claims_v2 = [
             _claim("C-001", "first smoke report", status="unconfirmed"),
             _claim("C-002", "second smoke report same batch", status="unconfirmed"),
         ]
-        state_v2 = _base_state(version=2, claims=claims_v2, prev_risk=out_v1.risk)
-        out_v2 = run(state_v2, _turn())
+        state_v2 = _base_state(version=2, claims=claims_v2, prev_risk=risk_v1)
+        risk_v2 = _risk_from_all(state_v2)
 
         # Level might be the same or higher (stub-based); we just verify consistency
-        assert out_v2.risk.level in ("Low", "Medium", "High", "Critical")
+        assert risk_v2.level in ("Low", "Medium", "High", "Critical")
         # Schema is still valid
-        assert isinstance(out_v2, A2Output)
+        assert isinstance(risk_v2, Risk)
 
 
 # ---------------------------------------------------------------------------
@@ -342,7 +366,7 @@ class TestHistoricalExamplesLimitedCurrent:
         # Claims from historical sources only
         claims = [
             Claim(
-                claim_id="C-H-01",
+                claim_id="C-101",
                 text="2025 TravelPlug social post (historical)",
                 status="unconfirmed",
                 evidence_strength="weak",
@@ -350,14 +374,16 @@ class TestHistoricalExamplesLimitedCurrent:
                 domains=["reputational"],
                 first_seen_version=1,
                 last_changed_version=1,
+                change_history=[ClaimChange(version=1, **{"from": None}, to="unconfirmed",
+                                             reason="initial", source_ids=["KB-07"])],
             )
         ]
         state = _base_state(claims=claims, sources=sources)
-        output = run(state, _turn())
+        risk = _risk_from_all(state)
 
         # With only one unconfirmed historical claim, risk should be low/medium
-        assert output.risk.level in ("Low", "Medium"), (
-            f"Historical-only evidence should not produce {output.risk.level}"
+        assert risk.level in ("Low", "Medium"), (
+            f"Historical-only evidence should not produce {risk.level}"
         )
 
     def test_historical_source_category_preserved_in_sources(self):
@@ -382,6 +408,9 @@ class TestDeterminism:
         claims = [_claim("C-001", "PCX-100 emitted smoke", status="unconfirmed")]
         state = _base_state(claims=claims)
 
-        results = [run(state, _turn()) for _ in range(3)]
-        levels = [r.risk.level for r in results]
+        levels = []
+        for _ in range(3):
+            s = _base_state(claims=claims)
+            risk = _risk_from_all(s)
+            levels.append(risk.level)
         assert len(set(levels)) == 1, f"Non-deterministic levels across runs: {levels}"

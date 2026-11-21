@@ -15,7 +15,9 @@ Run with:
 """
 
 import pytest
-from src.contracts import DomainAssessment, ImpactItem
+from datetime import datetime
+
+from src.contracts import CaseState, DomainImpact, ImpactItem, Impacts, new_case
 from src.risk import ActionChange, ClaimChange, compute_risk
 
 
@@ -24,19 +26,16 @@ from src.risk import ActionChange, ClaimChange, compute_risk
 # ---------------------------------------------------------------------------
 
 def make_domain(
-    domain="reputational",
     severity=1,
     likelihood=1,
     floor_triggers=None,
     evidence_confidence="low",
-) -> DomainAssessment:
-    return DomainAssessment(
-        domain=domain,
+) -> DomainImpact:
+    return DomainImpact(
         severity=severity,
         severity_reason=f"Test S{severity}",
         likelihood=likelihood,
         likelihood_reason=f"Test L{likelihood}",
-        score=severity * likelihood,
         impacts=[ImpactItem(
             description="test impact",
             if_unaddressed="test unaddressed",
@@ -48,6 +47,35 @@ def make_domain(
         floor_triggers=floor_triggers or [],
         evidence_confidence=evidence_confidence,
     )
+
+
+def make_state(
+    reputational: DomainImpact | None = None,
+    economic: DomainImpact | None = None,
+    legal_regulatory: DomainImpact | None = None,
+) -> CaseState:
+    """Build a minimal CaseState with the given domain impacts."""
+    state = new_case("CASE-001")
+    state.impacts = Impacts(
+        reputational=reputational,
+        economic=economic,
+        legal_regulatory=legal_regulatory,
+    )
+    return state
+
+
+def make_prev(level="Low") -> CaseState:
+    """Build a minimal previous CaseState with just a risk level."""
+    from src.contracts import Risk
+    prev = new_case("CASE-001")
+    prev.risk = Risk(
+        level=level,
+        max_domain_score=0,
+        floors_applied=[],
+        reasons=[],
+        evidence_confidence="low",
+    )
+    return prev
 
 
 # ---------------------------------------------------------------------------
@@ -77,7 +105,8 @@ def make_domain(
 ])
 def test_score_to_level(severity, likelihood, expected_level):
     domain = make_domain(severity=severity, likelihood=likelihood)
-    result = compute_risk([domain])
+    state = make_state(reputational=domain)
+    result = compute_risk(state)
     assert result.level == expected_level, (
         f"S{severity}×L{likelihood}={severity*likelihood} expected {expected_level}, "
         f"got {result.level}"
@@ -92,26 +121,26 @@ class TestF1Floor:
     def test_f1_raises_low_to_high(self):
         """F1 must raise a Low score to at least High."""
         domain = make_domain(severity=1, likelihood=2, floor_triggers=["F1"])  # score 2 → Low
-        result = compute_risk([domain])
+        result = compute_risk(make_state(reputational=domain))
         assert result.level == "High"
         assert "F1" in result.floors_applied
 
     def test_f1_does_not_lower_critical(self):
         """F1 must not lower a Critical score."""
         domain = make_domain(severity=4, likelihood=4, floor_triggers=["F1"])
-        result = compute_risk([domain])
+        result = compute_risk(make_state(reputational=domain))
         assert result.level == "Critical"
         assert "F1" in result.floors_applied
 
     def test_f1_does_not_affect_already_high(self):
         """F1 on a High score keeps it High."""
         domain = make_domain(severity=3, likelihood=3, floor_triggers=["F1"])  # score 9 → High
-        result = compute_risk([domain])
+        result = compute_risk(make_state(reputational=domain))
         assert result.level == "High"
 
     def test_f1_reason_present(self):
         domain = make_domain(severity=1, likelihood=1, floor_triggers=["F1"])
-        result = compute_risk([domain])
+        result = compute_risk(make_state(reputational=domain))
         assert any("F1" in r for r in result.reasons)
 
 
@@ -119,14 +148,14 @@ class TestF2Floor:
     def test_f2_raises_to_critical(self):
         """F2 must always produce Critical."""
         domain = make_domain(severity=1, likelihood=1, floor_triggers=["F2"])
-        result = compute_risk([domain])
+        result = compute_risk(make_state(reputational=domain))
         assert result.level == "Critical"
         assert "F2" in result.floors_applied
 
     def test_f2_overrides_f1(self):
         """When F2 is present, F1 reasoning should not appear (F2 is stronger)."""
         domain = make_domain(severity=1, likelihood=1, floor_triggers=["F1", "F2"])
-        result = compute_risk([domain])
+        result = compute_risk(make_state(reputational=domain))
         assert result.level == "Critical"
         assert "F2" in result.floors_applied
         # F1 is superseded by F2; check F2 reason present
@@ -136,23 +165,23 @@ class TestF2Floor:
 class TestF3Floor:
     def test_f3_raises_low_to_high(self):
         """F3 must raise a Low score to at least High."""
-        domain = make_domain(domain="legal_regulatory", severity=1, likelihood=2, floor_triggers=["F3"])
-        result = compute_risk([domain])
+        domain = make_domain(severity=1, likelihood=2, floor_triggers=["F3"])
+        result = compute_risk(make_state(legal_regulatory=domain))
         assert result.level == "High"
         assert "F3" in result.floors_applied
 
     def test_f3_does_not_lower_critical(self):
         domain = make_domain(severity=4, likelihood=4, floor_triggers=["F3"])
-        result = compute_risk([domain])
+        result = compute_risk(make_state(reputational=domain))
         assert result.level == "Critical"
 
 
 class TestF1F3Combination:
     def test_f1_and_f3_both_applied(self):
         """Both F1 and F3 can appear together; level = at least High."""
-        d_rep = make_domain(domain="reputational", severity=2, likelihood=2, floor_triggers=["F1"])
-        d_leg = make_domain(domain="legal_regulatory", severity=1, likelihood=1, floor_triggers=["F3"])
-        result = compute_risk([d_rep, d_leg])
+        d_rep = make_domain(severity=2, likelihood=2, floor_triggers=["F1"])
+        d_leg = make_domain(severity=1, likelihood=1, floor_triggers=["F3"])
+        result = compute_risk(make_state(reputational=d_rep, legal_regulatory=d_leg))
         assert result.level == "High"
         assert "F1" in result.floors_applied
         assert "F3" in result.floors_applied
@@ -167,8 +196,8 @@ class TestF4Guard:
         """Level must not drop if no claim was disproved and no action verified_effective."""
         domain = make_domain(severity=1, likelihood=2)  # score 2 → Low
         result = compute_risk(
-            [domain],
-            prev_level="High",
+            make_state(reputational=domain),
+            prev=make_prev("High"),
             claim_changes=[],
             action_changes=[],
         )
@@ -180,8 +209,8 @@ class TestF4Guard:
         domain = make_domain(severity=1, likelihood=1)  # score 1 → Low
         changes = [ClaimChange(claim_id="C-001", from_status="unconfirmed", to_status="disproved")]
         result = compute_risk(
-            [domain],
-            prev_level="High",
+            make_state(reputational=domain),
+            prev=make_prev("High"),
             claim_changes=changes,
             action_changes=[],
         )
@@ -193,8 +222,8 @@ class TestF4Guard:
         domain = make_domain(severity=1, likelihood=1)
         action_changes = [ActionChange(action_id="ACT-001", from_status="completed", to_status="verified_effective")]
         result = compute_risk(
-            [domain],
-            prev_level="High",
+            make_state(reputational=domain),
+            prev=make_prev("High"),
             claim_changes=[],
             action_changes=action_changes,
         )
@@ -205,8 +234,8 @@ class TestF4Guard:
         domain = make_domain(severity=1, likelihood=1)
         changes = [ClaimChange(claim_id="C-002", from_status="unconfirmed", to_status="misleading")]
         result = compute_risk(
-            [domain],
-            prev_level="Medium",
+            make_state(reputational=domain),
+            prev=make_prev("Medium"),
             claim_changes=changes,
         )
         assert result.level == "Low"
@@ -215,8 +244,8 @@ class TestF4Guard:
         """F4 guard only applies to drops; increases are always allowed."""
         domain = make_domain(severity=4, likelihood=4)  # Critical
         result = compute_risk(
-            [domain],
-            prev_level="Low",
+            make_state(reputational=domain),
+            prev=make_prev("Low"),
             claim_changes=[],
             action_changes=[],
         )
@@ -229,14 +258,14 @@ class TestF4Guard:
 
 def test_reasons_always_present():
     domain = make_domain(severity=2, likelihood=3)
-    result = compute_risk([domain])
+    result = compute_risk(make_state(reputational=domain))
     assert len(result.reasons) > 0
     assert all(isinstance(r, str) and len(r) > 0 for r in result.reasons)
 
 
 def test_reasons_present_with_floors():
     domain = make_domain(severity=1, likelihood=1, floor_triggers=["F1"])
-    result = compute_risk([domain])
+    result = compute_risk(make_state(reputational=domain))
     assert len(result.reasons) >= 2  # at least one domain reason + floor reason
 
 
@@ -246,17 +275,17 @@ def test_reasons_present_with_floors():
 
 def test_evidence_confidence_weakest_driving_domain():
     """The evidence_confidence of the result must be the weakest among driving domains."""
-    d1 = make_domain(domain="reputational", severity=3, likelihood=3, evidence_confidence="high")    # score 9
-    d2 = make_domain(domain="economic", severity=3, likelihood=3, evidence_confidence="low")         # score 9
-    result = compute_risk([d1, d2])
+    d1 = make_domain(severity=3, likelihood=3, evidence_confidence="high")    # score 9
+    d2 = make_domain(severity=3, likelihood=3, evidence_confidence="low")     # score 9
+    result = compute_risk(make_state(reputational=d1, economic=d2))
     assert result.level == "High"
     assert result.evidence_confidence == "low"
 
 
 def test_evidence_confidence_single_domain():
-    domain = make_domain(severity=2, likelihood=2, evidence_confidence="moderate")
-    result = compute_risk([domain])
-    assert result.evidence_confidence == "moderate"
+    domain = make_domain(severity=2, likelihood=2, evidence_confidence="medium")
+    result = compute_risk(make_state(reputational=domain))
+    assert result.evidence_confidence == "medium"
 
 
 # ---------------------------------------------------------------------------
@@ -264,7 +293,8 @@ def test_evidence_confidence_single_domain():
 # ---------------------------------------------------------------------------
 
 def test_empty_domains():
-    result = compute_risk([])
+    state = make_state()  # all None
+    result = compute_risk(state)
     assert result.level == "Low"
     assert len(result.reasons) > 0
 
@@ -274,10 +304,10 @@ def test_empty_domains():
 # ---------------------------------------------------------------------------
 
 def test_max_domain_score():
-    d1 = make_domain(domain="reputational", severity=3, likelihood=2)   # score 6
-    d2 = make_domain(domain="economic",     severity=2, likelihood=4)   # score 8
-    d3 = make_domain(domain="legal_regulatory", severity=1, likelihood=1)  # score 1
-    result = compute_risk([d1, d2, d3])
+    d1 = make_domain(severity=3, likelihood=2)   # score 6
+    d2 = make_domain(severity=2, likelihood=4)   # score 8
+    d3 = make_domain(severity=1, likelihood=1)   # score 1
+    result = compute_risk(make_state(reputational=d1, economic=d2, legal_regulatory=d3))
     assert result.max_domain_score == 8
     assert result.level == "High"
 
@@ -292,12 +322,11 @@ def test_s1_turn1_acceptance():
     Spec §8 acceptance test S1 turn 1:
     reputational S3×L2=6 (Medium), legal flags F1 → overall High with F1 floor reason.
     """
-    rep = make_domain(domain="reputational", severity=3, likelihood=2, evidence_confidence="low")
-    eco = make_domain(domain="economic",     severity=2, likelihood=1, evidence_confidence="low")
-    leg = make_domain(domain="legal_regulatory", severity=3, likelihood=2,
-                      floor_triggers=["F1"], evidence_confidence="low")
+    rep = make_domain(severity=3, likelihood=2, evidence_confidence="low")
+    eco = make_domain(severity=2, likelihood=1, evidence_confidence="low")
+    leg = make_domain(severity=3, likelihood=2, floor_triggers=["F1"], evidence_confidence="low")
 
-    result = compute_risk([rep, eco, leg])
+    result = compute_risk(make_state(reputational=rep, economic=eco, legal_regulatory=leg))
 
     assert result.level == "High", f"Expected High, got {result.level}"
     assert "F1" in result.floors_applied
