@@ -417,7 +417,8 @@ def run_turn(
         a5_out = _as(A5Output, agents.a5(snapshot(), turn, prev))
         state.changelog[-1].summary = a5_out.changes_summary
         pdf = case_dir(case_id) / f"report_v{version}.pdf"
-        state.report = Report(pdf_path=_rel(pdf), narrative=a5_out.narrative)
+        state.report = Report(pdf_path=_rel(pdf), narrative=a5_out.narrative,
+                              narrative_warnings=a5_out.narrative_warnings)
         state.updated_at = datetime.now(timezone.utc)
 
         step = "validate + save"
