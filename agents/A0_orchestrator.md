@@ -36,7 +36,7 @@ Output schema:
 - Load `state_v{N}.json` (or create an empty CaseState for a new case), set `version = N+1`, `turn_input`.
 - Save attachments to `cases/<id>/inputs/` and pass file paths to A1 (A1 assigns `U-xx` IDs).
 - Call agents in order. Run **A2a/b/c in parallel** (threads or asyncio).
-- After each agent: **validate** its output against the Pydantic model; on a validation failure, retry that agent once with the error message.
+- After each agent: its output is **validated** against the Pydantic model inside `llm.call_structured`, which retries once with the error message (D-011). If it still fails (`LLMError`), the pipeline surfaces a clear error instead of crashing.
 - **Merge rules** (code, see PROJECT §4): never delete sources/claims/actions; claim status changes need a `change_history` entry with sources; `verified_*` statuses need result evidence; only `risk.py` writes `risk`.
 - **A4 revise loop:** if `qa.verdict == "REVISE"` with blocking issues, re-run the target agent(s) **once**, passing the issues, then re-run risk + A4. Whatever is still unresolved stays in `qa.issues` (rendered as QA notes). Never loop more than once.
 - `diff.py`: compare v(N-1) and vN → fill `changelog[-1]` (risk_from/to, new sources, claim status changes, action status changes). A5 writes the narrative "why".
