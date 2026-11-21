@@ -196,7 +196,7 @@ def compute_risk(
     for d in domains:
         name = domain_names.get(id(d), "unknown")
         reasons.append(
-            f"{name.capitalize()}: {d.severity}×{d.likelihood}={d.score} → {_score_to_level(d.score)}"
+            f"{name.capitalize()} {d.severity}×{d.likelihood}={d.score} → {_score_to_level(d.score)}"
         )
 
     # ------------------------------------------------------------------
@@ -213,20 +213,13 @@ def compute_risk(
         floors_applied.append("F2")
         if level_rank < 4:
             level_rank = 4
-            reasons.append(
-                "F2 floor applied: confirmed injury, confirmed hazardous defect in market, "
-                "or authority contact → Critical (PROJECT §6)."
-            )
+        reasons.append("F2: confirmed injury, confirmed hazardous defect in market, or authority contact → floor Critical")
 
     if "F1" in all_triggers and "F2" not in all_triggers:
         floors_applied.append("F1")
         if level_rank < 3:
             level_rank = 3
-            reasons.append(
-                "F1 floor applied: credible fire/smoke/shock/injury report on product in market "
-                "→ at least High (KB-02: 'do not wait for complete diagnosis before flagging a "
-                "possible safety issue', PROJECT §6)."
-            )
+        reasons.append("F1: credible fire/smoke/shock/injury report on product in market → floor High")
 
     if "F3" in all_triggers and "F2" not in all_triggers:
         # F3 is independent of F1; both can apply.
@@ -234,10 +227,7 @@ def compute_risk(
             floors_applied.append("F3")
         if level_rank < 3:
             level_rank = 3
-            reasons.append(
-                "F3 floor applied: confirmed or likely unauthorised access to customer personal "
-                "data or recordings → at least High (PROJECT §6)."
-            )
+        reasons.append("F3: confirmed or likely unauthorised access to personal data or recordings → floor High")
 
     # ------------------------------------------------------------------
     # Step 4 — F4 de-escalation guard
