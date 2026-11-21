@@ -53,7 +53,8 @@ EvidenceStrength = Literal["strong", "moderate", "weak"]
 Domain = Literal["reputational", "economic", "legal_regulatory"]
 
 Timeframe = Literal["24h", "7d", "30d"]
-ImpactBasis = Literal["company_data", "precedent", "general_knowledge"]
+# incident_evidence (D-013): based on evidence about the current incident (e.g. U-xx), not an ACME record
+ImpactBasis = Literal["company_data", "incident_evidence", "precedent", "general_knowledge"]
 FloorId = Literal["F1", "F2", "F3", "F4"]
 Confidence = Literal["low", "medium", "high"]
 RiskLevel = Literal["Low", "Medium", "High", "Critical"]
@@ -243,6 +244,9 @@ class Action(_Model):
     approver: str | None = None
     timing: str
     priority: Priority
+    # D-013: set by A3 when a focus is set; the report sorts by priority, then focus.
+    # None = no focus set / not evaluated. Never affects scores (D-005).
+    focus_related: bool | None = None
     domains: list[Domain] = Field(default_factory=list)
     status: ActionStatus
     options_considered: list[ActionOption] = Field(default_factory=list)
@@ -320,8 +324,11 @@ class Closure(_Model):
 
 class Report(_Model):
     pdf_path: str | None = None
-    # Section name -> text, e.g. {"situation": ..., "changes_summary": ...}. A5 owns the keys.
+    # Section name -> text, e.g. {"executive_summary", "situation", "changes_summary",
+    # "closure_summary"}. A5 owns the keys; leave a key out rather than sending null.
     narrative: dict[str, str] = Field(default_factory=dict)
+    # D-013: results of A5's checks on its narrative (Appendix C). None = checks not run.
+    narrative_warnings: list[str] | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -455,6 +462,7 @@ class A4Output(_Model):
 class A5Output(_Model):
     narrative: dict[str, str] = Field(default_factory=dict)  # report section -> text
     changes_summary: str = ""  # the "why" for changelog[-1].summary
+    narrative_warnings: list[str] | None = None  # D-013, copied to report.narrative_warnings
 
 
 def new_case(case_id: str) -> CaseState:

@@ -7,7 +7,7 @@ import pytest
 
 from src import pipeline
 from src.agents import stubs
-from src.contracts import A1Output, A4Output, CaseState, ClaimChange
+from src.contracts import A1Output, A4Output, A5Output, CaseState, ClaimChange
 from src.llm import LLMOutputError
 
 TEXT_V1 = "Customers in Germany report PCX-100 chargers getting hot; a post says one smoked"
@@ -152,6 +152,17 @@ def test_registry_falls_back_to_stubs_until_real_modules_exist():
     for slot in ("a1", "a2", "a3", "a4", "a5", "render"):
         assert a.used[slot] in ("stub", f"{pipeline.REAL_AGENTS[slot][0]}.{pipeline.REAL_AGENTS[slot][1]}")
     assert a.used["classify"] == "llm"
+
+
+def test_a5_narrative_warnings_reach_the_saved_state(tmp_cases):
+    def a5_with_warnings(state, turn, prev):
+        return A5Output(narrative={"executive_summary": "x", "situation": "y"}, changes_summary="z",
+                        narrative_warnings=["situation: number 7,000 not found in the case data"])
+
+    r = pipeline.run_turn(TEXT_V1, agents=agents(a5=a5_with_warnings))
+    saved = CaseState.model_validate_json((tmp_cases / "CASE-001" / "state_v1.json").read_text(encoding="utf-8"))
+    assert saved.report.narrative_warnings == ["situation: number 7,000 not found in the case data"]
+    assert saved.report.narrative == {"executive_summary": "x", "situation": "y"}
 
 
 def test_stub_intents():

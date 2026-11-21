@@ -49,5 +49,6 @@ Status values: not started · in progress · in review (PR open) · done · bloc
 3. Who presents at Playback 2, and who owns the demo script?
 
 ## Recent sessions (newest first, keep 10)
+- 2026-11-21 · Matteo · director review of PR #2 (A5): 10 items decided, D-013 contract additions; PR #2 needs interface fix → `sessions/2026-11-21_matteo_a5-review.md`
 - 2026-11-21 · Matteo · P0 foundations: contracts, KB extraction, llm.py (live-tested), pipeline + stubs, hybrid models (D-009…D-012) → `sessions/2026-11-21_matteo_p0-foundations.md`
 - 2026-11-21 · Matteo · director setup: plan review, architecture, all specs → `sessions/2026-11-21_lead_director-setup.md`
