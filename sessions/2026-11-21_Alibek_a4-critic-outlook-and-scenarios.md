@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Who | Alibek |
-| Start → end | (session start) → (session end) |
+| Start → end | (session start) → session end |
 | Tool / LLM | Bob (IBM) |
 | Working on | A4 Critic & Outlook · QA lead · Test scenarios S1–S3 |
 | Branch | alibek/a4-critic-outlook-and-scenarios |
@@ -23,7 +23,7 @@
 - Created tests/scenarios/S3/turn_1.md + turn_1_expected.md — misleading TravelPlug repost; risk Low/Medium, no F1, claim = misleading
 
 ## Summary
-<!-- filled at session end: 3–5 lines -->
+First session for Alibek as A4 owner and QA lead. Spent time reading all project specs and understanding the full architecture. Completed the most urgent unblocking deliverable: the v1 fixture state for scenario S1 (needed by Serdar for PDF and Junda for risk.py tests). Then wrote all test scenario files for S1 (4 turns), S2 (2 turns), and S3 (1 turn), covering all major floors (F1, F2, F3), the F4 guard, and all 12 known traps. All files audited against PROJECT.md and AGENTS.md — one open question raised for the director about reputational severity anchoring. A4 agent code is blocked on Matteo's foundations landing (target Sun 22 Nov).
 
 ## Done
 - tests/fixtures/state_v1_S1.json — complete, audited, valid JSON

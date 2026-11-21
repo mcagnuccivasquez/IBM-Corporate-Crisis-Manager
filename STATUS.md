@@ -17,8 +17,8 @@ _Last updated: 2026-11-21 · by: project lead (director session)_
 | A2a/b/c Impact assessors + `risk.py` | A2 | **Junda** | not started | `risk.py` + tests first (pure Python, no dependencies) |
 | A5 Report Writer (template + PDF) | A5 | **Serdar** | not started | HTML template + PDF from a fixture state (needed for Playback 2) |
 | A3 Action Planner | A3 | **Serdar** | not started | After Playback 2 (25–28 Nov) |
-| A4 Critic & Outlook | A4 | **Alibek** | not started | After Playback 2 (25–28 Nov) |
-| Test scenarios S1–S3 + fixture states (QA lead) | A4 | **Alibek** | not started | **Write S1 + a v1 fixture state now**, needed by Serdar, Giacomo and the demo |
+| A4 Critic & Outlook | A4 | **Alibek** | in progress | Blocked on foundations; starts 25 Nov |
+| Test scenarios S1–S3 + fixture states (QA lead) | A4 | **Alibek** | done | fixture + all S1–S3 scenarios written and audited → PR on branch alibek/a4-critic-outlook-and-scenarios |
 
 _Assignment proposed by the director on 2026-11-21. Swap freely, but update this table._
 Status values: not started · in progress · in review (PR open) · done · blocked
@@ -48,4 +48,5 @@ Status values: not started · in progress · in review (PR open) · done · bloc
 3. Who presents at Playback 2, and who owns the demo script?
 
 ## Recent sessions (newest first, keep 10)
+- 2026-11-21 · Alibek · A4 QA lead: fixture state_v1_S1.json + all S1–S3 scenario files → `sessions/2026-11-21_Alibek_a4-critic-outlook-and-scenarios.md`
 - 2026-11-21 · Matteo · director setup: plan review, architecture, all specs → `sessions/2026-11-21_lead_director-setup.md`
