@@ -1,0 +1,34 @@
+{
+  "qa": {
+    "verdict": "PASS",
+    "issues": [
+      {
+        "target": "A3",
+        "item_id": "ACT-002",
+        "problem": "No option for holding batch A explained in public wording",
+        "fix_hint": "Add holding-statement draft",
+        "blocking": false,
+        "resolved": false
+      }
+    ]
+  },
+  "outlook": {
+    "residual_risk_if_p1_effective": "Medium",
+    "reasons": [
+      "Smoke claim verified or ruled out within 24h; held stock no longer ships"
+    ],
+    "assumptions": [
+      "The customer returns the unit"
+    ],
+    "cannot_estimate": [
+      "Units actually sold (delivered ≠ sold)"
+    ],
+    "pattern_warnings": [
+      "Do not reuse the #4471 cable explanation for a smoke report"
+    ]
+  },
+  "reopen_conditions": [
+    "A new smoke, fire or injury report involving PCX-100",
+    "Quality finds a defect in returned samples"
+  ]
+}

@@ -1,0 +1,14 @@
+# Streamlit settings for the ACME Crisis Manager UI (src/app.py)
+
+[server]
+# Only reachable from this computer: the app spends the API credit of the key in .env,
+# so it must not be open to other people on the same network.
+address = "localhost"
+port = 8501
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+# Blue accent instead of Streamlit's default red: in a crisis tool, red reads as an error.
+primaryColor = "#2563eb"

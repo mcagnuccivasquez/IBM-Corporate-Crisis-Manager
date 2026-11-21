@@ -1,0 +1,23 @@
+{
+  "severity": 3,
+  "likelihood": 2,
+  "score": 6,
+  "severity_reason": "Possible product-safety notification duty if a hazard is confirmed",
+  "likelihood_reason": "Hazard not confirmed; no authority contact",
+  "impacts": [
+    {
+      "description": "EU product-safety obligations could apply if a hazard is confirmed",
+      "if_unaddressed": "Late notification if the defect is confirmed",
+      "timeframe": "30d",
+      "stakeholders": [
+        "market surveillance authorities"
+      ],
+      "source_ids": [],
+      "basis": "general_knowledge"
+    }
+  ],
+  "floor_triggers": [
+    "F1"
+  ],
+  "evidence_confidence": "low"
+}

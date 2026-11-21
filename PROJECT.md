@@ -140,7 +140,7 @@ All agents read and write **one JSON object** per version. It will be implemente
 
   "impacts": {                        // A2a/b/c, one block per domain
     "reputational":     { "severity": 3, "likelihood": 2, "score": 6, "severity_reason": "...", "likelihood_reason": "...",
-                          "impacts": [{ "description": "...", "if_unaddressed": "...", "timeframe": "24h|7d|30d", "stakeholders": ["customers DE"], "source_ids": ["..."], "basis": "company_data|precedent|general_knowledge" }],
+                          "impacts": [{ "description": "...", "if_unaddressed": "...", "timeframe": "24h|7d|30d", "stakeholders": ["customers DE"], "source_ids": ["..."], "basis": "company_data|incident_evidence|precedent|general_knowledge" }],
                           "floor_triggers": ["F1"], "evidence_confidence": "low" },
     "economic":         { "...": "same shape" },
     "legal_regulatory": { "...": "same shape" }
@@ -161,6 +161,7 @@ All agents read and write **one JSON object** per version. It will be implemente
     "what_it_does": "Stops new shipments of the suspect batch while Quality tests samples",
     "owner": "Luca Ferri (Supply Chain)", "approver": "Elena Rossi (COO)",
     "timing": "within 24h", "priority": "P1",          // P1 now | P2 this week | P3 later
+    "focus_related": null,            // A3 sets true/false when a focus is set (ordering only, D-013)
     "domains": ["economic", "legal_regulatory"],
     "status": "proposed",             // proposed | approved | in_progress | completed | verified_effective | verified_ineffective | dropped
     "options_considered": [{ "option": "Hold both batches", "pros": "...", "cons": "...", "chosen": false }],
@@ -184,7 +185,9 @@ All agents read and write **one JSON object** per version. It will be implemente
   }],
 
   "closure": null,                    // on CLOSE: { "remaining_risk": "...", "open_actions": ["ACT-.."], "reopen_conditions": ["..."] }
-  "report": { "pdf_path": "cases/CASE-001/report_v2.pdf", "narrative": { "situation": "...", "changes_summary": "..." } }
+  "report": { "pdf_path": "cases/CASE-001/report_v2.pdf",
+              "narrative": { "executive_summary": "...", "situation": "...", "changes_summary": "..." },  // + "closure_summary" when closed; omit keys, never null
+              "narrative_warnings": [] }   // A5's checks on its own text (null = not run), D-013
 }
 ```
 
@@ -224,6 +227,8 @@ Independence rule: copies, reposts, articles quoting the same post, and the PNGs
 | 4 | Severe: confirmed injury/fire, confirmed access to recordings, authority action, withdrawal across markets; cost > €1M | Occurring: harm, media coverage, retailer or authority action already happening |
 
 Likelihood is about the **world** (exposure, spread, mechanism). Evidence strength is about **our sources**. Both are reported; they are not merged.
+
+**Reading the anchors (D-014):** the clauses inside one anchor are **alternatives**: meeting any one of them is enough for that score. **Reach and spread are scored in Likelihood, never in Severity.** Example: a single unconfirmed screenshot of a PCX-100 smoking → reputational **S=3** ("safety question on a product line in market") × **L=2** ("single unverified report; limited reach") = 6.
 
 **Step 2, overall level (code):** take the highest domain score →
 
@@ -304,7 +309,7 @@ All agents cite these IDs. Paths are relative to `knowledge_base/ACME_company_fi
 | Concern | Choice |
 |---|---|
 | Language | Python 3.11+ |
-| LLM | Claude via the official `anthropic` SDK. Default model `claude-opus-5-5`; tune cost per agent with `output_config.effort` (low for A0 intent/A5, high for A1/A4). Structured outputs via `client.messages.parse()` + Pydantic. Adaptive thinking. Prompt caching on the KB block. **Before writing LLM code, load the `claude-api` skill in Claude Code** (APIs changed in 2026: no prefill, forced `tool_choice` returns 400, etc.) |
+| LLM | Claude via the official `anthropic` SDK. Hybrid models (D-012): `claude-sonnet-5-5` for A1–A4, `claude-haiku-5-5` for A0 intent/answers and A5 (set in `.env`: `ACME_MODEL`, `ACME_MODEL_LIGHT`); tune cost per agent with `output_config.effort` (low for A0 intent/A5, high for A1/A4). Structured outputs via `output_config.format` + Pydantic validation in `src/llm.py` (D-011). Adaptive thinking. Prompt caching on the KB block. **Before writing LLM code, load the `claude-api` skill in Claude Code** (APIs changed in 2026: no prefill, forced `tool_choice` returns 400, etc.) |
 | KB loading | No vector DB needed: the KB is ~10k tokens of text. Extract once to `knowledge_base/extracted/KB-xx.md` and put it in the cached system prompt for every agent. User-uploaded PDFs/images go to A1 natively (document/image blocks) |
 | Contracts | Pydantic models in `src/contracts.py` (= §4) |
 | Risk engine | `src/risk.py`, pure Python, unit-tested |
@@ -373,3 +378,9 @@ Each agent module exposes one function: `run(state: CaseState, turn: TurnInput) 
 | D-006 | 2026-11-21 | A4 = Critic (grounding + trap checklist) + Outlook (residual risk, pattern traps); max 1 revise loop | Verifies A3 as the team planned, bounded cost |
 | D-007 | 2026-11-21 | Build as Python code in Git (not n8n JSON, not Railway/Inngest/Supabase) | Git-friendly team collaboration and one-chat-per-agent mapping, testable, deterministic risk engine, no infra overhead in an 11-day window. **Open:** confirm with the instructors whether IBM watsonx Orchestrate is expected; if yes, the agents' prompts and contracts port to Orchestrate ADK agents + Python tools |
 | D-008 | 2026-11-21 | KB loaded as cached full text, no RAG/vector DB | ~10k tokens; citations by source ID are more reliable than retrieval |
+| D-009 | 2026-11-21 | §4 implemented in `src/contracts.py` with: unknown fields rejected; ID formats enforced (`KB-xx`/`U-xx`/`C-xxx`/`ACT-xxx`/`CASE-xxx`), unique per state; `score` auto-filled = S×L (mismatch rejected); every claim/action has ≥1 history entry and its status = last entry; `verified_*` needs result evidence; `turn_input.attachments` = file paths before A1, `U-xx` IDs after; `report.narrative` = free dict (A5 owns keys); `evidence_confidence` ∈ low/medium/high; QA `target` may be A2a/b/c; `Source.date` free text; empty case = version 0 | Validation catches bad agent output early (one retry per agent); fills gaps §4 left open |
+| D-010 | 2026-11-21 | Extracted KB (`knowledge_base/extracted/KB-xx.md`, generated by `scripts/extract_kb.py`) adds, clearly labelled: `[Extraction note: …]` lines for images (screenshot PNGs = copies, not independent sources); computed per-batch totals for KB-13 (delivered ≠ sold); a `time_relevance` header field (historical_case → historical) | Helps agents avoid traps #2 and #7; the KB block tells agents these notes are not ACME content |
+| D-011 | 2026-11-21 | `src/llm.py` is the only way agents call Claude: own validation instead of `messages.parse()`; the one validation retry lives in `call_structured` (not the pipeline); shared `COMMON_RULES` text (draft-only, cite IDs, label general knowledge, state unknowns) before the KB in every system prompt; server-side refusal fallback on (`fallbacks="default"`); effort per agent, cache effect to be measured in `trace.jsonl` | Keeps token usage and raw text on failures; the model sees its own error; one consistent guardrail for R18 and R2 |
+| D-012 | 2026-11-21 | Hybrid models instead of Opus 5.5 everywhere: Sonnet 5.5 for the reasoning agents (A1–A4), Haiku 5.5 for A0 intent/answers and A5 narrative; overridable in `.env`. Refusal fallback only on models that support it (not Haiku 5.5) | API budget: ≈ $0.35/turn vs ≈ $1.00 with Opus (estimate; check `trace.jsonl`). Can switch the main model to Opus for the final demo if quality needs it |
+| D-013 | 2026-11-21 | Director review of Serdar's A5 items (PR #2). Contract additions: `Action.focus_related: bool \| null` (A3, ordering only); `report.narrative_warnings: list \| null` (+ `A5Output`); impact `basis` value `incident_evidence`. No change needed: `executive_summary`/`closure_summary` (narrative is a free dict, omit instead of null); agent trace = `trace.jsonl`; readable KB titles = `kb.py` / `kb_source()`. Keep the brief's report section order (§7). A5 must use `llm.call_structured` | Additive only (existing data stays valid); matches what the A5 renderer already reads; section order follows the brief that graders compare against |
+| D-014 | 2026-11-21 | Severity/Likelihood anchors (§6): clauses within an anchor are alternatives (any one is enough); reach and spread are scored only in Likelihood. S1 turn 1 reputational = S3 × L2 = 6 (answers Alibek's question) | Keeps the two dimensions separate, so every agent scores the same evidence the same way; counting reach in both would double-count it |
