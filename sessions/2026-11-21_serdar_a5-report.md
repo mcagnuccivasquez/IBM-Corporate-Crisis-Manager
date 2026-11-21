@@ -76,6 +76,7 @@ Built a working first version of A5 Report Writer for Playback 2. Code renders a
 7. **Who loads `.env`**: the shared `llm.py` or each agent? (Matteo)
 8. **History label wording**: changed from "New / Changed this version / —" to "New in v1 / Changed in v2 / No change since v1"; Serdar to confirm.
 9. **Team questions still open in STATUS.md**: API keys or shared budget; who presents at Playback 2; whether IBM watsonx Orchestrate is required.
+10. **API key handling** (Serdar): don't set up a personal key for now; discuss another way of handling Claude access in session 2 (e.g. shared team budget, or whatever the team decides for question 2 in STATUS.md).
 
 ## Next steps (for whoever picks this up)
 - Add an API key (environment variable) and run `.venv/bin/python src/agents/a5_report.py src/report/sample_state_v1_TEMPORARY.json /tmp/a5test`; read the PDF and Appendix C warnings
