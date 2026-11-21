@@ -92,6 +92,36 @@ class ActionChange:
     to_status: str
 
 
+def _derive_claim_changes(state: CaseState, prev: Optional[CaseState]) -> list[ClaimChange]:
+    """Derive claim status changes by comparing state vs prev claim statuses.
+    Used when the pipeline calls compute_risk(state, prev) without explicit changes.
+    """
+    if prev is None:
+        return []
+    prev_by_id = {c.claim_id: c for c in prev.claims}
+    changes: list[ClaimChange] = []
+    for c in state.claims:
+        old = prev_by_id.get(c.claim_id)
+        old_status = old.status if old else None
+        if old_status != c.status:
+            changes.append(ClaimChange(claim_id=c.claim_id, from_status=old_status, to_status=c.status))
+    return changes
+
+
+def _derive_action_changes(state: CaseState, prev: Optional[CaseState]) -> list[ActionChange]:
+    """Derive action status changes by comparing state vs prev action statuses."""
+    if prev is None:
+        return []
+    prev_by_id = {a.action_id: a for a in prev.actions}
+    changes: list[ActionChange] = []
+    for a in state.actions:
+        old = prev_by_id.get(a.action_id)
+        old_status = old.status if old else None
+        if old_status != a.status:
+            changes.append(ActionChange(action_id=a.action_id, from_status=old_status, to_status=a.status))
+    return changes
+
+
 def compute_risk(
     state: CaseState,
     prev: Optional[CaseState] = None,
@@ -105,15 +135,20 @@ def compute_risk(
     ----------
     state:          Current CaseState (after A2a/b/c have written their DomainImpact results).
     prev:           Previous CaseState version, or None for v1.
-    claim_changes:  Claim status changes in this turn (from A1 output).
-    action_changes: Action status changes in this turn (from A3 output).
+    claim_changes:  Claim status changes this turn. If None, derived automatically from
+                    state vs prev by comparing claim/action statuses (used by the pipeline
+                    which calls compute_risk(state, prev) without explicit change lists).
+    action_changes: Action status changes this turn. Same auto-derivation if None.
 
     Returns
     -------
     Risk — written directly into CaseState.risk by A0. Never written by an LLM.
     """
-    claim_changes = claim_changes or []
-    action_changes = action_changes or []
+    # Auto-derive changes from state vs prev when not supplied explicitly.
+    if claim_changes is None:
+        claim_changes = _derive_claim_changes(state, prev)
+    if action_changes is None:
+        action_changes = _derive_action_changes(state, prev)
 
     prev_level = prev.risk.level if (prev and prev.risk) else None
 

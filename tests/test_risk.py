@@ -17,7 +17,10 @@ Run with:
 import pytest
 from datetime import datetime
 
-from src.contracts import CaseState, DomainImpact, ImpactItem, Impacts, new_case
+from src.contracts import (
+    Action, ActionStatusChange, Claim, ClaimChange as ContractsClaimChange,
+    CaseState, DomainImpact, ImpactItem, Impacts, new_case,
+)
 from src.risk import ActionChange, ClaimChange, compute_risk
 
 
@@ -250,6 +253,89 @@ class TestF4Guard:
             action_changes=[],
         )
         assert result.level == "Critical"
+
+
+
+# ---------------------------------------------------------------------------
+# F4 auto-derivation: pipeline calls compute_risk(state, prev) without explicit changes
+# ---------------------------------------------------------------------------
+
+def _make_claim(claim_id: str, status: str, source_id: str = "KB-01", version: int = 1) -> Claim:
+    return Claim(
+        claim_id=claim_id,
+        text=f"Test claim {claim_id}",
+        status=status,
+        evidence_strength="weak",
+        source_ids=[source_id],
+        first_seen_version=version,
+        last_changed_version=version,
+        change_history=[ContractsClaimChange(
+            version=version, **{"from": None}, to=status,
+            reason="initial", source_ids=[source_id],
+        )],
+    )
+
+
+def _make_action(action_id: str, status: str, source_id: str = "KB-01", version: int = 1) -> Action:
+    result_evidence = [source_id] if status in ("verified_effective", "verified_ineffective") else []
+    return Action(
+        action_id=action_id,
+        title=f"Test action {action_id}",
+        what_it_does="test",
+        owner="test",
+        timing="immediate",
+        priority="P1",
+        status=status,
+        result_evidence_source_ids=result_evidence,
+        status_history=[ActionStatusChange(
+            version=version, **{"from": None}, to=status, reason="initial",
+        )],
+    )
+
+
+class TestF4AutoDerivation:
+    """F4 guard works when pipeline calls compute_risk(state, prev) without explicit change lists."""
+
+    def test_claim_disproved_in_state_allows_drop(self):
+        """Claim that is disproved in state (was unconfirmed in prev) → de-escalation allowed."""
+        domain = make_domain(severity=1, likelihood=1)  # Low
+        state = make_state(reputational=domain)
+        state.claims = [_make_claim("C-001", "disproved")]
+
+        prev = make_prev("High")
+        prev.claims = [_make_claim("C-001", "unconfirmed")]
+
+        # No explicit claim_changes — must be auto-derived
+        result = compute_risk(state, prev=prev)
+        assert result.level == "Low", (
+            f"Disproved claim (auto-derived) should allow de-escalation, got {result.level}"
+        )
+        assert not any("F4" in r for r in result.reasons)
+
+    def test_no_disprove_blocks_drop_via_auto_derivation(self):
+        """No claim changes in state → F4 blocks the drop (auto-derivation returns no changes)."""
+        domain = make_domain(severity=1, likelihood=1)  # Low
+        state = make_state(reputational=domain)
+        state.claims = [_make_claim("C-001", "unconfirmed")]  # status unchanged from prev
+
+        prev = make_prev("High")
+        prev.claims = [_make_claim("C-001", "unconfirmed")]
+
+        result = compute_risk(state, prev=prev)
+        assert result.level == "High", "F4 should block when no changes are auto-derived"
+        assert any("F4" in r for r in result.reasons)
+
+    def test_action_verified_effective_allows_drop_via_auto_derivation(self):
+        """Action reaching verified_effective in state → de-escalation allowed."""
+        domain = make_domain(severity=1, likelihood=1)  # Low
+        state = make_state(reputational=domain)
+        state.actions = [_make_action("ACT-001", "verified_effective")]
+
+        prev = make_prev("High")
+        prev.actions = [_make_action("ACT-001", "completed")]
+
+        result = compute_risk(state, prev=prev)
+        assert result.level == "Low"
 
 
 # ---------------------------------------------------------------------------
