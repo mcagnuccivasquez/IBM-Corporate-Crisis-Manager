@@ -15,7 +15,7 @@ _Last updated: 2026-11-21 · by: project lead (director session)_
 | A0 Orchestrator (`pipeline.py`, `app.py`, `diff.py`) + integration | A0 | **Matteo** | not started | Single-turn pipeline with stubs |
 | A1 Evidence Analyst | A1 | **Giacomo** | not started | Prompt + output model (needed for Playback 2) |
 | A2a/b/c Impact assessors + `risk.py` | A2 | **Junda** | not started | `risk.py` + tests first (pure Python, no dependencies) |
-| A5 Report Writer (template + PDF) | A5 | **Serdar** | not started | HTML template + PDF from a fixture state (needed for Playback 2) |
+| A5 Report Writer (template + PDF) | A5 | **Serdar** | in progress | Renderer + narrative + checks done (61 tests, branch `serdar/a5-report`). Next: run with a real API key, fix known weaknesses, switch to `contracts.py`/`llm.py` and Alibek's S1 fixture |
 | A3 Action Planner | A3 | **Serdar** | not started | After Playback 2 (25–28 Nov) |
 | A4 Critic & Outlook | A4 | **Alibek** | not started | After Playback 2 (25–28 Nov) |
 | Test scenarios S1–S3 + fixture states (QA lead) | A4 | **Alibek** | not started | **Write S1 + a v1 fixture state now**, needed by Serdar, Giacomo and the demo |
@@ -48,4 +48,5 @@ Status values: not started · in progress · in review (PR open) · done · bloc
 3. Who presents at Playback 2, and who owns the demo script?
 
 ## Recent sessions (newest first, keep 10)
+- 2026-11-21 · Serdar · A5 report: renderer, template, narrative + checks, readability redesign; 10 items need director review → `sessions/2026-11-21_serdar_a5-report.md`
 - 2026-11-21 · Matteo · director setup: plan review, architecture, all specs → `sessions/2026-11-21_lead_director-setup.md`
