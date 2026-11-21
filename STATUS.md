@@ -1,6 +1,6 @@
 # STATUS — current state of the project
 
-_Last updated: 2026-11-21 · by: project lead (director session)_
+_Last updated: 2026-11-21 18:05 · by: Matteo (p0-foundations session)_
 
 **Next deadline:** Playback 2 · **Tue 24 Nov 2026** · demo target: scenario S1 turn 1 → Report v1 PDF
 **Final:** Wed 2 Dec 2026
@@ -11,8 +11,8 @@ _Last updated: 2026-11-21 · by: project lead (director session)_
 
 | Component | Spec | Owner | Status | Next step |
 |---|---|---|---|---|
-| Foundations (`contracts.py`, `llm.py`, `kb.py`, KB extraction) | A0 | **Matteo** | not started | **Blocks everyone, do first** (target: Sun 22 Nov) |
-| A0 Orchestrator (`pipeline.py`, `app.py`, `diff.py`) + integration | A0 | **Matteo** | not started | Single-turn pipeline with stubs |
+| Foundations (`contracts.py`, `llm.py`, `kb.py`, KB extraction) | A0 | **Matteo** | in review (branch `matteo/p0-foundations`) | Open PR → main and merge; live API verified (cache hit, $0.03) |
+| A0 Orchestrator (`pipeline.py`, `app.py`, `diff.py`) + integration | A0 | **Matteo** | in review (branch `matteo/app-ui`) | `pipeline.py`, `diff.py`, stubs, `app.py` done (UI runs end to end on stubs: `.\.venv\Scripts\python.exe -m streamlit run src/app.py`); next: integrate teammates' agents, first live S1 run |
 | A1 Evidence Analyst | A1 | **Giacomo** | not started | Prompt + output model (needed for Playback 2) |
 | A2a/b/c Impact assessors + `risk.py` | A2 | **Junda** | not started | `risk.py` + tests first (pure Python, no dependencies) |
 | A5 Report Writer (template + PDF) | A5 | **Serdar** | not started | HTML template + PDF from a fixture state (needed for Playback 2) |
@@ -24,7 +24,8 @@ _Assignment proposed by the director on 2026-11-21. Swap freely, but update this
 Status values: not started · in progress · in review (PR open) · done · blocked
 
 ### Until foundations land (unblocking plan)
-- Everyone codes against the schema in PROJECT.md §4. Matteo publishes `contracts.py` first, then everyone switches to it.
+- Foundations are on branch `matteo/p0-foundations` (PR pending). Once merged: use `src/contracts.py` (incl. agent output models), `src/llm.py` (`call_structured`), `src/kb.py`; your agent module is picked up by `src/pipeline.py` automatically. Interface list: `sessions/2026-11-21_matteo_p0-foundations.md` → "Changes for teammates". **Each owner: check the interface against your spec.**
+- Models (D-012): Sonnet 5.5 for A1–A4, Haiku 5.5 for A0/A5. A full report turn ≈ $0.35 (estimate; real costs in `cases/<id>/trace.jsonl`).
 - Alibek's fixture state (`tests/fixtures/state_v1_S1.json`) lets Serdar build the PDF and Junda test `risk.py` without waiting for A1/A2.
 
 ### Live coordination (not tracked in this file)
@@ -48,5 +49,10 @@ Status values: not started · in progress · in review (PR open) · done · bloc
 3. Who presents at Playback 2, and who owns the demo script?
 
 ## Recent sessions (newest first, keep 10)
+- 2026-11-22 · Alibek · A4 fixture contract fixes: case_id, outlook.reasons, ACT-001 owner → `sessions/2026-11-22_Alibek_a4-critic-outlook.md`
 - 2026-11-21 · Alibek · A4 QA lead: fixture state_v1_S1.json + all S1–S3 scenario files → `sessions/2026-11-21_Alibek_a4-critic-outlook-and-scenarios.md`
+- 2026-11-21 · Matteo · Streamlit chat UI (`app.py`): cases, versions + PDF downloads, risk badge, attachments, live agent progress; localhost-only config → `sessions/2026-11-21_matteo_app-ui.md`
+- 2026-11-21 · Matteo · reviews of Junda's + Alibek's branches; D-014 severity anchors (S=3, reach → Likelihood) → `sessions/2026-11-21_matteo_branch-reviews.md`
+- 2026-11-21 · Matteo · director review of PR #2 (A5): 10 items decided, D-013 contract additions; PR #2 needs interface fix → `sessions/2026-11-21_matteo_a5-review.md`
+- 2026-11-21 · Matteo · P0 foundations: contracts, KB extraction, llm.py (live-tested), pipeline + stubs, hybrid models (D-009…D-012) → `sessions/2026-11-21_matteo_p0-foundations.md`
 - 2026-11-21 · Matteo · director setup: plan review, architecture, all specs → `sessions/2026-11-21_lead_director-setup.md`

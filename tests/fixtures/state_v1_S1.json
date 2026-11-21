@@ -1,5 +1,5 @@
 {
-  "case_id": "CASE-S1",
+  "case_id": "CASE-001",
   "version": 1,
   "created_at": "2026-11-21T09:00:00Z",
   "updated_at": "2026-11-21T09:00:00Z",
@@ -265,7 +265,7 @@
       "action_id": "ACT-001",
       "title": "Retrieve and test PCX-100 unit(s) from customer report",
       "what_it_does": "Quality team contacts the reporting customer to retrieve the damaged unit and any additional samples from the same batch for thermal testing to confirm or rule out a defect.",
-      "owner": "Elena Rossi (COO / Quality)",
+      "owner": "Maya Chen (Quality)",
       "approver": "Elena Rossi (COO)",
       "timing": "within 24h",
       "priority": "P1",
@@ -358,28 +358,10 @@
 
   "outlook": {
     "residual_risk_if_p1_effective": "Medium",
-    "domain_projection": [
-      {
-        "domain": "reputational",
-        "severity": 2,
-        "likelihood": 1,
-        "reason": "If no defect is confirmed, the isolated post is handled via the KB-08 response pattern (acknowledgement + visible answer). Single contained report, no further spread assumed.",
-        "basis_source_ids": ["KB-08"]
-      },
-      {
-        "domain": "economic",
-        "severity": 1,
-        "likelihood": 1,
-        "reason": "No batch hold needed if defect is ruled out; costs limited to sample retrieval and customer care response.",
-        "basis_source_ids": ["KB-12"]
-      },
-      {
-        "domain": "legal_regulatory",
-        "severity": 2,
-        "likelihood": 1,
-        "reason": "If defect is ruled out by lab test, no regulatory notification obligation. F1 floor lifted once claim is disproved.",
-        "basis_source_ids": ["KB-02"]
-      }
+    "reasons": [
+      "Reputational (projected): S=2 × L=1 = 2 → Low. If no defect is confirmed, the isolated post is handled via the KB-08 response pattern (acknowledgement + visible answer). Single contained report, no further spread assumed. (basis: KB-08)",
+      "Economic (projected): S=1 × L=1 = 1 → Low. No batch hold needed if defect is ruled out; costs limited to sample retrieval and customer care response. (basis: KB-12)",
+      "Legal/regulatory (projected): S=2 × L=1 = 2 → Low. If defect is ruled out by lab test, no regulatory notification obligation. F1 floor lifted once claim is disproved. (basis: KB-02)"
     ],
     "assumptions": [
       "Sample retrieval succeeds within 24h and lab results are available within 7 days.",

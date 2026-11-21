@@ -1,0 +1,164 @@
+{
+  "case_id": "CASE-001",
+  "version": 2,
+  "created_at": "2026-11-21T10:00:00Z",
+  "updated_at": "2026-11-21T11:30:00Z",
+  "status": "open",
+  "focus": "PCX-100 overheating",
+  "turn_input": { "intent": "NEW_INFO", "user_text": "A post on TownSquare says a PCX-100 started smoking while charging a laptop. Screenshot attached.", "attachments": ["U-02"] },
+
+  "sources": [
+    {
+      "source_id": "U-01", "title": "Customer care summary: 4 PCX-100 heat contacts in DE, 1-20 Nov 2026",
+      "file": null, "origin": "user_text", "date": "2026-11-20",
+      "category": "incident_evidence", "time_relevance": "current", "duplicate_of": null,
+      "reliability_note": "Pasted by the user from the care system; no ticket export attached", "added_in_version": 1
+    },
+    {
+      "source_id": "U-02", "title": "Screenshot of TownSquare post by @kai_b (smoke while charging)",
+      "file": "cases/CASE-001/inputs/post.png", "origin": "user_upload", "date": "2026-11-20",
+      "category": "incident_evidence", "time_relevance": "current", "duplicate_of": null,
+      "reliability_note": "Screenshot only; original link not provided", "added_in_version": 2
+    },
+    {
+      "source_id": "U-03", "title": "Newspaper web article quoting the @kai_b post",
+      "file": null, "origin": "user_text", "date": "2026-11-21",
+      "category": "incident_evidence", "time_relevance": "current", "duplicate_of": "U-02",
+      "reliability_note": "Repeats the same post; not a second report", "added_in_version": 2
+    }
+  ],
+
+  "claims": [
+    {
+      "claim_id": "C-001", "text": "Customers in DE reported PCX-100 units feeling hot during charging (4 contacts in November)",
+      "status": "confirmed", "evidence_strength": "moderate",
+      "source_ids": ["U-01"], "contradicted_by": [], "domains": ["reputational"],
+      "product": "PCX-100", "batch": null, "market": "DE",
+      "first_seen_version": 1, "last_changed_version": 1,
+      "change_history": [{ "version": 1, "from": null, "to": "confirmed", "reason": "Contacts are logged in the care system (the contacts exist; no defect is implied)", "source_ids": ["U-01"] }]
+    },
+    {
+      "claim_id": "C-002", "text": "A PCX-100 unit emitted smoke while charging a laptop",
+      "status": "unconfirmed", "evidence_strength": "weak",
+      "source_ids": ["U-02", "U-03"], "contradicted_by": [], "domains": ["reputational", "legal_regulatory"],
+      "product": "PCX-100", "batch": null, "market": "DE",
+      "first_seen_version": 2, "last_changed_version": 2,
+      "change_history": [{ "version": 2, "from": null, "to": "unconfirmed", "reason": "Single social post seen as a screenshot; U-03 is a copy of it, not a second report", "source_ids": ["U-02"] }]
+    },
+    {
+      "claim_id": "C-003", "text": "The July VN-3 sampling shows September PCX-100 batches are fine",
+      "status": "misleading", "evidence_strength": "strong",
+      "source_ids": ["KB-11"], "contradicted_by": ["KB-13"], "domains": ["legal_regulatory"],
+      "product": "PCX-100", "batch": "PCX-2609-A", "market": null,
+      "first_seen_version": 2, "last_changed_version": 2,
+      "change_history": [{ "version": 2, "from": null, "to": "misleading", "reason": "VN-3 sampled 30 July units only; September batches were not covered", "source_ids": ["KB-11", "KB-13"] }]
+    }
+  ],
+
+  "impacts": {
+    "reputational": {
+      "severity": 3, "likelihood": 2, "score": 6,
+      "severity_reason": "Safety question on a product line in market with public visibility",
+      "likelihood_reason": "Single unverified post, picked up by one outlet; reach still limited",
+      "impacts": [{
+        "description": "Social and press attention on PCX-100 safety in DE",
+        "if_unaddressed": "Story spreads to IT/FR; retailers ask questions",
+        "timeframe": "7d", "stakeholders": ["customers DE", "retailers"],
+        "source_ids": ["U-02", "U-03", "KB-08"], "basis": "precedent"
+      }],
+      "floor_triggers": ["F1"], "evidence_confidence": "low"
+    },
+    "economic": {
+      "severity": 2, "likelihood": 2, "score": 4,
+      "severity_reason": "Batch hold setup €5,000 per batch; replacement €30/unit only if a remedy is needed",
+      "likelihood_reason": "No confirmed defect yet",
+      "impacts": [{
+        "description": "Cost of a precautionary warehouse hold on PCX-2609-B",
+        "if_unaddressed": "If a defect is confirmed later, more units reach customers and remedy cost grows",
+        "timeframe": "7d", "stakeholders": ["ACME finance"],
+        "source_ids": ["KB-12", "KB-13"], "basis": "company_data"
+      }],
+      "floor_triggers": [], "evidence_confidence": "medium"
+    },
+    "legal_regulatory": {
+      "severity": 3, "likelihood": 2, "score": 6,
+      "severity_reason": "Possible product-safety notification duty if a hazard is confirmed",
+      "likelihood_reason": "Hazard not confirmed; no authority contact",
+      "impacts": [{
+        "description": "EU product-safety obligations could apply if a hazard is confirmed",
+        "if_unaddressed": "Late notification if the defect is confirmed",
+        "timeframe": "30d", "stakeholders": ["market surveillance authorities"],
+        "source_ids": [], "basis": "general_knowledge"
+      }],
+      "floor_triggers": ["F1"], "evidence_confidence": "low"
+    }
+  },
+
+  "risk": {
+    "level": "High", "previous_level": "Medium",
+    "max_domain_score": 6, "floors_applied": ["F1"],
+    "reasons": ["Reputational 3×2=6 → Medium", "F1: unconfirmed smoke report on product in market → floor High"],
+    "evidence_confidence": "low"
+  },
+
+  "stakeholders": [
+    { "name": "Customers in DE/IT/FR", "type": "external", "interest": "Safe chargers", "impact": "Possible safety risk", "acme_contact": "Tom Weber (Customer Care)" },
+    { "name": "Quality team", "type": "internal", "interest": "Root cause", "impact": "Sample testing workload", "acme_contact": null }
+  ],
+
+  "actions": [
+    {
+      "action_id": "ACT-001", "title": "Contact @kai_b privately and request the unit and label photo",
+      "what_it_does": "Gets the physical unit to Quality and checks it is a genuine PCX-100",
+      "owner": "Tom Weber (Customer Care)", "approver": null,
+      "timing": "within 24h", "priority": "P1", "domains": ["reputational"],
+      "status": "approved",
+      "options_considered": [],
+      "basis_source_ids": ["KB-03", "KB-08"], "expected_effect": "Confirms or rules out the smoke claim",
+      "result_evidence_source_ids": [],
+      "status_history": [
+        { "version": 1, "from": null, "to": "proposed", "reason": "Heat contacts need a sample" },
+        { "version": 2, "from": "proposed", "to": "approved", "reason": "Smoke report raises priority" }
+      ]
+    },
+    {
+      "action_id": "ACT-002", "title": "Warehouse hold on batch PCX-2609-B (3,000 units, Frankfurt)",
+      "what_it_does": "Stops new shipments of the suspect batch while Quality tests samples",
+      "owner": "Luca Ferri (Supply Chain)", "approver": "Elena Rossi (COO)",
+      "timing": "within 24h", "priority": "P1", "domains": ["economic", "legal_regulatory"],
+      "status": "proposed",
+      "options_considered": [
+        { "option": "Hold both batches", "pros": "Maximum caution", "cons": "€10,000 setup, blocks 5,000 units", "chosen": false },
+        { "option": "Hold PCX-2609-B only", "pros": "Lower cost", "cons": "Assumes batch A is unaffected", "chosen": true }
+      ],
+      "basis_source_ids": ["KB-12", "KB-13"], "expected_effect": "No further exposure from held stock",
+      "result_evidence_source_ids": [],
+      "status_history": [{ "version": 2, "from": null, "to": "proposed", "reason": "F1 floor applies" }]
+    }
+  ],
+
+  "outlook": {
+    "residual_risk_if_p1_effective": "Medium",
+    "reasons": ["Smoke claim verified or ruled out within 24h; held stock no longer ships"],
+    "assumptions": ["The customer returns the unit"],
+    "cannot_estimate": ["Units actually sold (delivered ≠ sold)"],
+    "pattern_warnings": ["Do not reuse the #4471 cable explanation for a smoke report"]
+  },
+
+  "qa": {
+    "verdict": "PASS",
+    "issues": [{ "target": "A3", "item_id": "ACT-002", "problem": "No option for holding batch A explained in public wording", "fix_hint": "Add holding-statement draft", "blocking": false, "resolved": false }]
+  },
+
+  "open_questions": [
+    { "question": "Which batch does the @kai_b unit come from?", "owner": "Tom Weber (Customer Care)", "raised_in_version": 2, "closed_in_version": null }
+  ],
+
+  "changelog": [
+    { "version": 1, "risk_from": null, "risk_to": "Medium", "new_source_ids": ["U-01"], "claim_changes": ["C-001 new (confirmed)"], "action_changes": ["ACT-001 proposed"], "summary": "Heat contacts logged; no safety report yet" },
+    { "version": 2, "risk_from": "Medium", "risk_to": "High", "new_source_ids": ["U-02", "U-03"], "claim_changes": ["C-002 new (unconfirmed)", "C-003 new (misleading)"], "action_changes": ["ACT-001 proposed → approved", "ACT-002 proposed"], "summary": "Unconfirmed smoke report triggers floor F1" }
+  ],
+
+  "closure": null,
+  "report": { "pdf_path": "cases/CASE-001/report_v2.pdf", "narrative": { "situation": "...", "changes_summary": "..." } }
+}
