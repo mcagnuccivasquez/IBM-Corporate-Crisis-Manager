@@ -17,9 +17,9 @@ Do not load other agents' specs unless the task is about the interface between t
 When the user says something like **"Hey I'm <name> and I will start my work session"** (any wording or language with that intent):
 1. Ask what they will work on (agent/task, GitHub issue number) if they didn't say.
 2. Make sure the repo is up to date: run `git pull` if you have a shell, or ask the user to.
-3. Read `STATUS.md`. **Warn** if someone else is listed under "Working now" on the same agent or files.
+3. Read `STATUS.md`. **Warn** if the task belongs to another owner in the components table, and suggest commenting on that GitHub Issue first.
 4. Create `sessions/YYYY-MM-DD_<name>_<topic>.md` from `sessions/_TEMPLATE.md`. Fill the header (name, date, start time, tool/LLM, goal).
-5. Add the person to "Working now" in `STATUS.md`.
+5. Create or switch to a branch `<name>/<topic>`, and remind the user to post a "starting" line in the group chat.
 
 ### ● During the session
 - Append **one line per meaningful action** to the session file's *Log*: files created or changed, decisions, prompt changes, test runs and results, blockers. Not every chat message.
@@ -28,7 +28,7 @@ When the user says something like **"Hey I'm <name> and I will start my work ses
 ### ■ End trigger
 When the user says something like **"Ok, now I'm finishing my session"**:
 1. Complete the session file: *Summary, Done, Not done / blockers, Next steps, Files touched, Needs director review*.
-2. Update `STATUS.md`: the agent status table, remove the person from "Working now", add one line to "Recent sessions" (keep the last 10).
+2. Update `STATUS.md`: the agent status table and one line in "Recent sessions" (keep the last 10). Edit only your own rows.
 3. Propose a commit message: `[A1] <what changed> (session: <name>)`. Commit and push **only after the user confirms**, ideally on a branch `<name>/<topic>` with a pull request.
 4. Remind the user to post one line in the group chat ("Done with A1 extraction; PR #12; next: verification rules").
 
