@@ -1,0 +1,441 @@
+{
+  "case_id": "CASE-S1",
+  "version": 1,
+  "created_at": "2026-11-21T09:00:00Z",
+  "updated_at": "2026-11-21T09:00:00Z",
+  "status": "open",
+  "focus": "PCX-100 overheating",
+  "turn_input": {
+    "intent": "NEW_INFO",
+    "user_text": "We just got a viral post from a customer saying their PCX-100 smoked and melted on their desk. It has a screenshot attached. They say they bought it in Germany in October 2026.",
+    "attachments": ["U-01"]
+  },
+
+  "sources": [
+    {
+      "source_id": "U-01",
+      "title": "Social media screenshot: customer post 'PCX-100 smoked and melted on my desk'",
+      "file": "cases/CASE-S1/inputs/pcx100_smoke_post.png",
+      "origin": "user_upload",
+      "date": "2026-11-21",
+      "category": "incident_evidence",
+      "time_relevance": "current",
+      "duplicate_of": null,
+      "reliability_note": "Single screenshot; original post URL not provided; cannot verify authenticity independently.",
+      "added_in_version": 1
+    },
+    {
+      "source_id": "KB-01",
+      "title": "ACME Company Overview 2026",
+      "file": "knowledge_base/ACME_company_files/ACME_company_overview_2026.pdf",
+      "origin": "kb",
+      "date": "2026-09-01",
+      "category": "reference",
+      "time_relevance": "current",
+      "duplicate_of": null,
+      "reliability_note": "Official company document; marketplace listings cannot all be verified.",
+      "added_in_version": 1
+    },
+    {
+      "source_id": "KB-02",
+      "title": "Operations Contacts Oct 2026",
+      "file": "knowledge_base/ACME_company_files/Operations_contacts_Oct26.pdf",
+      "origin": "kb",
+      "date": "2026-10-20",
+      "category": "reference",
+      "time_relevance": "current",
+      "duplicate_of": null,
+      "reliability_note": "Official internal contact list. No crisis playbook exists.",
+      "added_in_version": 1
+    },
+    {
+      "source_id": "KB-03",
+      "title": "PCX-100 Product Spec v4 (Sales Copy)",
+      "file": "knowledge_base/ACME_company_files/Product_PCX100_v4_sales_copy.pdf",
+      "origin": "kb",
+      "date": "2026-09-08",
+      "category": "reference",
+      "time_relevance": "current",
+      "duplicate_of": null,
+      "reliability_note": "Official product spec: 100W GaN, throttle 65°C, shutdown 75±2°C internal, no network/no remote fix.",
+      "added_in_version": 1
+    },
+    {
+      "source_id": "KB-05",
+      "title": "September 2026 Customer Care Review",
+      "file": "knowledge_base/ACME_company_files/Sep26_customer_care_review.pdf",
+      "origin": "kb",
+      "date": "2026-10-05",
+      "category": "company_record",
+      "time_relevance": "current",
+      "duplicate_of": null,
+      "reliability_note": "Sept tickets: PCX 420 total (18 heat-related, 16 closed no defect, 2 awaiting samples). Contacts ≠ failure rate.",
+      "added_in_version": 1
+    },
+    {
+      "source_id": "KB-08",
+      "title": "TravelPlug Social Follow-up (response precedent)",
+      "file": "knowledge_base/ACME_company_files/RE_TravelPlug_social_followup.pdf",
+      "origin": "kb",
+      "date": "2025-11-18",
+      "category": "historical_case",
+      "time_relevance": "historical",
+      "duplicate_of": null,
+      "reliability_note": "Response precedent: short acknowledgement, private follow-up, test, no fault found, answer kept visible. Historical case — TravelPlug 30, not PCX-100; not evidence about the current incident.",
+      "added_in_version": 1
+    },
+    {
+      "source_id": "KB-10",
+      "title": "Holding-Statement Working Notes (AK)",
+      "file": "knowledge_base/ACME_company_files/Replies_working_notes_AK.pdf",
+      "origin": "kb",
+      "date": "2026-07-07",
+      "category": "informal_note",
+      "time_relevance": "current",
+      "duplicate_of": null,
+      "reliability_note": "Working notes on holding-statement wording. NOT approved policy. Do not claim 'authorities contacted', 'independent tests', or 'all units tested' unless confirmed.",
+      "added_in_version": 1
+    },
+    {
+      "source_id": "KB-12",
+      "title": "Costs for PowerCharge Returns (planning)",
+      "file": "knowledge_base/ACME_company_files/RE_costs_for_PowerCharge_returns.pdf",
+      "origin": "kb",
+      "date": "2026-09-30",
+      "category": "planning_assumption",
+      "time_relevance": "current",
+      "duplicate_of": null,
+      "reliability_note": "€30/unit replacement+logistics; €5,000 per-batch hold setup. Delivered ≠ sold. CEO approval required for large remedies.",
+      "added_in_version": 1
+    },
+    {
+      "source_id": "KB-13",
+      "title": "PCX Stock Export 22 Oct 2026",
+      "file": "knowledge_base/ACME_company_files/PCX_stock_export_22Oct.csv",
+      "origin": "kb",
+      "date": "2026-10-22",
+      "category": "company_record",
+      "time_relevance": "current",
+      "duplicate_of": null,
+      "reliability_note": "Batch PCX-2609-A: 2,000 warehouse + 6,000 delivered (DE 2,500/IT 2,000/FR 1,500). Batch PCX-2609-B: 3,000 warehouse + 5,000 delivered (DE 2,200/IT 1,800/FR 1,000). Delivered to channels ≠ sold.",
+      "added_in_version": 1
+    }
+  ],
+
+  "claims": [
+    {
+      "claim_id": "C-001",
+      "text": "A PCX-100 unit emitted smoke and showed melting damage while in use, purchased in Germany, October 2026.",
+      "status": "unconfirmed",
+      "evidence_strength": "weak",
+      "source_ids": ["U-01"],
+      "contradicted_by": [],
+      "domains": ["reputational", "legal_regulatory"],
+      "product": "PCX-100",
+      "batch": null,
+      "market": "DE",
+      "first_seen_version": 1,
+      "last_changed_version": 1,
+      "change_history": [
+        {
+          "version": 1,
+          "from": null,
+          "to": "unconfirmed",
+          "reason": "Single customer screenshot; original post URL not verified; no ACME internal confirmation.",
+          "source_ids": ["U-01"]
+        }
+      ]
+    }
+  ],
+
+  "impacts": {
+    "reputational": {
+      "severity": 3,
+      "likelihood": 2,
+      "score": 6,
+      "severity_reason": "A smoke/melt report on a product line in market raises a public safety question. If the post spreads, broad public attention is plausible (KB-08 precedent: TravelPlug post spread quickly). Safety dimension elevates severity to Major.",
+      "likelihood_reason": "Single unverified screenshot at this point; limited confirmed reach. Post may spread further but no evidence of that yet.",
+      "impacts": [
+        {
+          "description": "Viral social media post alleging smoke and melting damage from a PCX-100 unit could trigger brand trust erosion in DE market and beyond.",
+          "if_unaddressed": "Prolonged silence or inadequate response increases risk of media pick-up, retailer withdrawal of stock, and loss of consumer confidence across IT/DE/FR markets.",
+          "timeframe": "24h",
+          "stakeholders": ["Customers in DE", "DE retailers", "Media"],
+          "source_ids": ["U-01", "KB-08"],
+          "basis": "precedent"
+        }
+      ],
+      "floor_triggers": ["F1"],
+      "evidence_confidence": "low"
+    },
+    "economic": {
+      "severity": 2,
+      "likelihood": 2,
+      "score": 4,
+      "severity_reason": "At this stage one unconfirmed report. If defect is confirmed and a batch hold or recall is needed, costs are material (KB-12: €5,000 per-batch hold setup; replacement €30/unit for affected units). Scope is unknown — delivered ≠ sold (KB-13).",
+      "likelihood_reason": "One unconfirmed report; defect scope unknown. Financial exposure is possible but not yet quantifiable.",
+      "impacts": [
+        {
+          "description": "Potential batch hold costs and unit replacements if the defect is confirmed in PCX-2609-B or PCX-2609-A.",
+          "if_unaddressed": "If a wider defect is confirmed without prior hold, retailer-driven returns and regulatory pressure could force a larger, more expensive remedy. CEO approval required for large remedies (KB-12).",
+          "timeframe": "7d",
+          "stakeholders": ["ACME Supply Chain", "ACME Finance", "DE/IT/FR retailers"],
+          "source_ids": ["KB-12", "KB-13"],
+          "basis": "company_data"
+        }
+      ],
+      "floor_triggers": [],
+      "evidence_confidence": "low"
+    },
+    "legal_regulatory": {
+      "severity": 3,
+      "likelihood": 2,
+      "score": 6,
+      "severity_reason": "A credible (even unconfirmed) report of smoke/fire on a consumer product in an EU market triggers potential obligations under EU product-safety regulations. Safety concerns must be flagged early per KB-02 (Elena's principle). Legal/DPO (Sophie Laurent) should be informed.",
+      "likelihood_reason": "Single unverified report; no authority contact received yet. Regulatory notification is possible if the defect is confirmed.",
+      "impacts": [
+        {
+          "description": "Possible EU product-safety notification duty if a thermal defect is confirmed. ACME must not wait for a full diagnosis before flagging (KB-02).",
+          "if_unaddressed": "Failure to notify authorities promptly after confirmation could constitute a regulatory violation and increase liability.",
+          "timeframe": "7d",
+          "stakeholders": ["Legal/DPO Sophie Laurent", "EU product-safety authorities"],
+          "source_ids": ["KB-02", "KB-03"],
+          "basis": "general_knowledge"
+        }
+      ],
+      "floor_triggers": ["F1"],
+      "evidence_confidence": "low"
+    }
+  },
+
+  "risk": {
+    "level": "High",
+    "previous_level": null,
+    "max_domain_score": 6,
+    "floors_applied": ["F1"],
+    "reasons": [
+      "Reputational: S=3 × L=2 = 6 → Medium",
+      "Legal/regulatory: S=3 × L=2 = 6 → Medium",
+      "Economic: S=2 × L=2 = 4 → Medium",
+      "F1 applied: credible unconfirmed report of smoke/melting on a PCX-100 unit in market (DE) → floor High (KB-02: flag safety issues early, do not wait for full diagnosis)"
+    ],
+    "evidence_confidence": "low"
+  },
+
+  "stakeholders": [
+    {
+      "name": "PCX-100 customers in DE",
+      "type": "external",
+      "interest": "Product safety; not owning a unit with a potential defect",
+      "impact": "Direct safety risk if thermal defect is real; eroded trust if communication is poor",
+      "acme_contact": "Tom Weber (Customer Care)"
+    },
+    {
+      "name": "DE retailers carrying PCX-100",
+      "type": "external",
+      "interest": "Reputation and liability; may pull stock proactively",
+      "impact": "Potential stock removal, refund pressure, reputational association",
+      "acme_contact": "Luca Ferri (Supply Chain)"
+    },
+    {
+      "name": "ACME Quality & Safety team",
+      "type": "internal",
+      "interest": "Determine whether a thermal defect exists and its scope",
+      "impact": "Must retrieve samples from PCX-2609-B for immediate testing",
+      "acme_contact": "Elena Rossi (COO)"
+    },
+    {
+      "name": "ACME Legal / DPO",
+      "type": "internal",
+      "interest": "EU product-safety notification obligations; liability exposure",
+      "impact": "Must be briefed; will determine whether and when authorities must be notified",
+      "acme_contact": "Sophie Laurent (Legal/DPO)"
+    },
+    {
+      "name": "ACME CEO",
+      "type": "internal",
+      "interest": "Executive awareness; approve large remedies if required",
+      "impact": "Must approve any batch hold or recall decision per KB-12",
+      "acme_contact": "Daniel Moretti (CEO)"
+    }
+  ],
+
+  "actions": [
+    {
+      "action_id": "ACT-001",
+      "title": "Retrieve and test PCX-100 unit(s) from customer report",
+      "what_it_does": "Quality team contacts the reporting customer to retrieve the damaged unit and any additional samples from the same batch for thermal testing to confirm or rule out a defect.",
+      "owner": "Elena Rossi (COO / Quality)",
+      "approver": "Elena Rossi (COO)",
+      "timing": "within 24h",
+      "priority": "P1",
+      "domains": ["legal_regulatory", "reputational"],
+      "status": "proposed",
+      "options_considered": [
+        {
+          "option": "Wait for more reports before retrieving a sample",
+          "pros": "Less resource expenditure if the report is isolated",
+          "cons": "Delays confirmation; regulatory obligation clock may already be running; KB-02 says flag safety early",
+          "chosen": false
+        },
+        {
+          "option": "Retrieve sample immediately and begin thermal testing",
+          "pros": "Provides evidence to confirm or rule out defect quickly; supports any regulatory notification decision",
+          "cons": "Resource cost; customer may not cooperate",
+          "chosen": true
+        }
+      ],
+      "basis_source_ids": ["KB-02", "KB-03"],
+      "expected_effect": "Confirms or rules out a thermal defect in the PCX-100 unit; determines whether a batch hold is warranted.",
+      "result_evidence_source_ids": [],
+      "status_history": [
+        { "version": 1, "from": null, "to": "proposed", "reason": "Single smoke/melt report received; KB-02 requires early flagging of safety issues." }
+      ]
+    },
+    {
+      "action_id": "ACT-002",
+      "title": "Publish holding statement on social media post",
+      "what_it_does": "Post a short, factual acknowledgement on the social media platform in response to the viral post. Acknowledge the report, state that ACME is investigating, and ask the customer to contact Customer Care. Do not claim 'all units tested' or 'authorities contacted' (KB-10 restriction).",
+      "owner": "Tom Weber (Customer Care)",
+      "approver": "Elena Rossi (COO)",
+      "timing": "within 24h",
+      "priority": "P1",
+      "domains": ["reputational"],
+      "status": "proposed",
+      "options_considered": [
+        {
+          "option": "No public response; handle privately",
+          "pros": "Avoids amplifying the post",
+          "cons": "Silence on a safety post is typically perceived negatively; KB-08 precedent recommends a visible acknowledgement",
+          "chosen": false
+        },
+        {
+          "option": "Short public acknowledgement + private follow-up",
+          "pros": "Demonstrates responsiveness; aligns with KB-08 TravelPlug response precedent",
+          "cons": "May attract further attention if wording is poor",
+          "chosen": true
+        }
+      ],
+      "basis_source_ids": ["KB-08", "KB-10"],
+      "expected_effect": "Limits reputational escalation; shows ACME is responsive without making unverified claims.",
+      "result_evidence_source_ids": [],
+      "status_history": [
+        { "version": 1, "from": null, "to": "proposed", "reason": "Viral post requires timely public acknowledgement per KB-08 precedent." }
+      ]
+    },
+    {
+      "action_id": "ACT-003",
+      "title": "Brief Legal/DPO (Sophie Laurent) on potential EU product-safety notification obligation",
+      "what_it_does": "Inform Sophie Laurent (Legal/DPO) of the unconfirmed smoke report so she can assess whether and when an EU product-safety authority notification is required. No commitment to notify before her assessment.",
+      "owner": "Elena Rossi (COO)",
+      "approver": "Elena Rossi (COO)",
+      "timing": "within 24h",
+      "priority": "P1",
+      "domains": ["legal_regulatory"],
+      "status": "proposed",
+      "options_considered": [
+        {
+          "option": "Wait until defect is confirmed before briefing Legal",
+          "pros": "Avoids premature escalation",
+          "cons": "Loses lead time on notification obligation; KB-02 says flag early",
+          "chosen": false
+        },
+        {
+          "option": "Brief Legal immediately so they can track the situation",
+          "pros": "Legal can advise on obligations; prepares notification path if needed",
+          "cons": "Minor overhead",
+          "chosen": true
+        }
+      ],
+      "basis_source_ids": ["KB-02"],
+      "expected_effect": "Legal is in the loop; ACME is not caught off-guard by notification deadlines.",
+      "result_evidence_source_ids": [],
+      "status_history": [
+        { "version": 1, "from": null, "to": "proposed", "reason": "F1 floor triggered; KB-02 requires safety issues to be flagged to relevant contacts early." }
+      ]
+    }
+  ],
+
+  "outlook": {
+    "residual_risk_if_p1_effective": "Medium",
+    "domain_projection": [
+      {
+        "domain": "reputational",
+        "severity": 2,
+        "likelihood": 1,
+        "reason": "If no defect is confirmed, the isolated post is handled via the KB-08 response pattern (acknowledgement + visible answer). Single contained report, no further spread assumed.",
+        "basis_source_ids": ["KB-08"]
+      },
+      {
+        "domain": "economic",
+        "severity": 1,
+        "likelihood": 1,
+        "reason": "No batch hold needed if defect is ruled out; costs limited to sample retrieval and customer care response.",
+        "basis_source_ids": ["KB-12"]
+      },
+      {
+        "domain": "legal_regulatory",
+        "severity": 2,
+        "likelihood": 1,
+        "reason": "If defect is ruled out by lab test, no regulatory notification obligation. F1 floor lifted once claim is disproved.",
+        "basis_source_ids": ["KB-02"]
+      }
+    ],
+    "assumptions": [
+      "Sample retrieval succeeds within 24h and lab results are available within 7 days.",
+      "The original social media post does not spread further before the acknowledgement is published.",
+      "No second independent smoke/fire report is received in the interim."
+    ],
+    "cannot_estimate": [
+      "Actual number of PCX-100 units sold to end consumers (KB-13: delivered to channels ≠ sold; KB-12: scope must be justified).",
+      "Media pick-up probability or reach of the viral post.",
+      "Whether the reporting customer will cooperate with sample retrieval."
+    ],
+    "pattern_warnings": [
+      "Do not use the #4471 cable fault explanation (KB-06) to dismiss this smoke/melt report — that case was a cable fault and must not be generalised to smoke/melting damage.",
+      "Do not generalise the VN-3 July visit note (KB-11) as clearing September batches — those batches were not sampled."
+    ]
+  },
+
+  "qa": {
+    "verdict": "PASS",
+    "issues": []
+  },
+
+  "open_questions": [
+    {
+      "question": "Which batch does the customer's PCX-100 unit belong to (PCX-2609-A or PCX-2609-B)? The screenshot does not show the batch label.",
+      "owner": "Tom Weber (Customer Care)",
+      "raised_in_version": 1,
+      "closed_in_version": null
+    },
+    {
+      "question": "Has the social media post been shared or picked up by any media outlet?",
+      "owner": "Tom Weber (Customer Care)",
+      "raised_in_version": 1,
+      "closed_in_version": null
+    }
+  ],
+
+  "changelog": [
+    {
+      "version": 1,
+      "risk_from": null,
+      "risk_to": "High",
+      "new_source_ids": ["U-01"],
+      "claim_changes": ["C-001 new (unconfirmed): PCX-100 smoke and melt report, DE, Oct 2026"],
+      "action_changes": ["ACT-001 proposed: retrieve and test sample", "ACT-002 proposed: publish holding statement", "ACT-003 proposed: brief Legal/DPO"],
+      "summary": "Case opened on receipt of a single social media screenshot reporting smoke and melting from a PCX-100 unit purchased in Germany. Claim is unconfirmed (single screenshot, no independent corroboration). Risk set to High due to floor F1: credible unconfirmed report of smoke on a product in market. Three P1 actions proposed: sample retrieval, public acknowledgement, and Legal briefing."
+    }
+  ],
+
+  "closure": null,
+
+  "report": {
+    "pdf_path": "cases/CASE-S1/report_v1.pdf",
+    "narrative": {
+      "situation": "ACME received a viral social media screenshot on 2026-11-21 in which a customer claims their PCX-100 power adapter emitted smoke and showed melting damage while in use. The unit was purchased in Germany in October 2026. This is the first reported incident of this type for the PCX-100 product line in the current cycle.",
+      "changes_summary": "Version 1 — case opened. One unconfirmed smoke/melt claim (C-001) registered. Risk assessed as High (floor F1 applied). Three priority actions proposed: sample retrieval, holding statement, and Legal/DPO briefing."
+    }
+  }
+}
