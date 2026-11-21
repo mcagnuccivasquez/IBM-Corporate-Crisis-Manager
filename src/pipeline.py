@@ -193,6 +193,27 @@ def _save_meta(case_id: str, meta: dict[str, Any]) -> None:
     _meta_path(case_id).write_text(json.dumps(meta, indent=2), encoding="utf-8")
 
 
+def list_cases() -> list[str]:
+    """Case IDs that have at least one saved version or chat message, newest first."""
+    ids = [p.name for p in cases_dir().glob("CASE-*") if p.is_dir() and (latest_version(p.name) or (p / "chat.jsonl").exists())]
+    return sorted(ids, reverse=True)
+
+
+def load_chat(case_id: str) -> list[dict[str, Any]]:
+    """Chat history of a case (written by the UI): [{"role", "content", ...}, ...]."""
+    p = case_dir(case_id) / "chat.jsonl"
+    if not p.exists():
+        return []
+    return [json.loads(line) for line in p.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def append_chat(case_id: str, message: dict[str, Any]) -> None:
+    p = case_dir(case_id) / "chat.jsonl"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with p.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(message, ensure_ascii=False) + "\n")
+
+
 def _rel(path: Path) -> str:
     try:
         return path.resolve().relative_to(ROOT).as_posix()
@@ -444,22 +465,27 @@ def run_turn(
 
 
 def chat_reply(prev: CaseState | None, state: CaseState) -> str:
-    """Template reply (no LLM): version, risk change, key changes, top P1 actions, PDF."""
+    """Template reply (no LLM), as Markdown: version, risk change, key changes, top P1 actions.
+    The PDF is offered separately (download button in the UI, path printed by the CLI)."""
     risk = state.risk
     entry = state.changelog[-1]
+    if risk.previous_level is None:
+        risk_text = f"Risk: **{risk.level}** (first assessment)"
+    elif risk.previous_level == risk.level:
+        risk_text = f"Risk: **{risk.level}** (unchanged)"
+    else:
+        risk_text = f"Risk: {risk.previous_level} → **{risk.level}**"
+    header = f"**Report v{state.version}** · {risk_text} · evidence confidence: {risk.evidence_confidence}"
+    if state.status == "closed":
+        header += " · case **closed**"
     changes = (entry.claim_changes + entry.action_changes)[:3] or ["no claim or action changes"]
+    lines = [header, "", "**Key changes**"] + [f"- {c}" for c in changes]
     p1 = [a for a in state.actions if a.priority == "P1" and a.status in OPEN_ACTION_STATUSES][:3]
-    lines = [
-        f"**Report v{state.version}** · Risk: {risk.previous_level or '—'} → **{risk.level}** "
-        f"(evidence confidence: {risk.evidence_confidence})" + (" · case **closed**" if state.status == "closed" else ""),
-        "Key changes: " + "; ".join(changes),
-    ]
     if p1:
-        lines.append("Top P1 actions: " + "; ".join(f"{a.action_id} {a.title} ({a.owner}, {a.timing})" for a in p1))
+        lines += ["", "**Top P1 actions**"] + [f"- {a.action_id} · {a.title} · {a.owner} · {a.timing}" for a in p1]
     unresolved = [i for i in (state.qa.issues if state.qa else []) if not i.resolved]
     if unresolved:
-        lines.append(f"QA notes: {len(unresolved)} open (see the report appendix)")
-    lines.append(f"PDF: {state.report.pdf_path}")
+        lines += ["", f"QA notes: {len(unresolved)} open (see the report appendix)"]
     return "\n".join(lines)
 
 
@@ -475,6 +501,8 @@ def main() -> None:
     logging.basicConfig(level=logging.WARNING)
     result = run_turn(args.text, args.attach, args.case, use_stubs=args.stubs, on_step=lambda s: print(f"  … {s}"))
     print(f"\ncase {result.case_id} · intents {result.intents}\n{result.reply}")
+    if result.pdf_path:
+        print(f"\nPDF: {result.pdf_path}")
     if result.error:
         print(f"\nERROR: {result.error}")
     print(f"\nagents: {result.agents_used}")
