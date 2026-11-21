@@ -1,0 +1,9 @@
+snapshot,model,batch,channel,market_or_location,quantity_type,units,record_owner
+2026-10-22 18:00 CEST,PCX-100,PCX-2609-A,ACME warehouse,Frankfurt,stock_on_hand,2000,Luca Ferri
+2026-10-22 18:00 CEST,PCX-100,PCX-2609-A,Retail / ACME online fulfilment,Germany,delivered_to_channels,2500,Luca Ferri
+2026-10-22 18:00 CEST,PCX-100,PCX-2609-A,Retail / ACME online fulfilment,Italy,delivered_to_channels,2000,Luca Ferri
+2026-10-22 18:00 CEST,PCX-100,PCX-2609-A,Retail / ACME online fulfilment,France,delivered_to_channels,1500,Luca Ferri
+2026-10-22 18:00 CEST,PCX-100,PCX-2609-B,ACME warehouse,Frankfurt,stock_on_hand,3000,Luca Ferri
+2026-10-22 18:00 CEST,PCX-100,PCX-2609-B,Retail / ACME online fulfilment,Germany,delivered_to_channels,2200,Luca Ferri
+2026-10-22 18:00 CEST,PCX-100,PCX-2609-B,Retail / ACME online fulfilment,Italy,delivered_to_channels,1800,Luca Ferri
+2026-10-22 18:00 CEST,PCX-100,PCX-2609-B,Retail / ACME online fulfilment,France,delivered_to_channels,1000,Luca Ferri
