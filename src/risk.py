@@ -161,8 +161,7 @@ def compute_risk(
     for d in domains:
         name = domain_names.get(id(d), "unknown")
         reasons.append(
-            f"{name.capitalize()}: S{d.severity}×L{d.likelihood}={d.score} "
-            f"→ {_score_to_level(d.score)}"
+            f"{name.capitalize()}: {d.severity}×{d.likelihood}={d.score} → {_score_to_level(d.score)}"
         )
 
     # ------------------------------------------------------------------

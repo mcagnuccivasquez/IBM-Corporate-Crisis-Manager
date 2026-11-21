@@ -53,7 +53,7 @@ EvidenceStrength = Literal["strong", "moderate", "weak"]
 Domain = Literal["reputational", "economic", "legal_regulatory"]
 
 Timeframe = Literal["24h", "7d", "30d"]
-ImpactBasis = Literal["company_data", "precedent", "general_knowledge"]
+ImpactBasis = Literal["company_data", "precedent", "general_knowledge", "incident_evidence"]
 FloorId = Literal["F1", "F2", "F3", "F4"]
 Confidence = Literal["low", "medium", "high"]
 RiskLevel = Literal["Low", "Medium", "High", "Critical"]
