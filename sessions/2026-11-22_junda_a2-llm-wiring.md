@@ -19,6 +19,12 @@
 - 19:00 · rewrote tests/test_risk.py: added make_state/make_prev helpers, updated all test calls to new compute_risk(state, prev) API, changed CASE-TEST→CASE-001, moderate→medium
 - 19:05 · rewrote tests/test_a2_integration.py: updated imports (DomainImpact, Impacts, Risk, new_case), rewrote all tests for new per-domain run() interface + _run_all/_risk_from_all helpers, fixed CASE-TEST→CASE-001, C-H-01→C-101, added change_history to Claim constructors
 - 19:10 · ran full pytest: 120/120 passed (52 A2 + 68 Matteo's tests)
+- 19:30 · review from Matteo: 4 issues to fix before merge
+- 19:30 · restored contracts.py from origin/main (fixed BOM + encoding damage from PowerShell Out-File; D-013 already on main)
+- 19:35 · added _derive_claim_changes/_derive_action_changes to risk.py: auto-derives F4 inputs from state vs prev when pipeline omits explicit lists
+- 19:40 · added TestF4AutoDerivation (3 tests): disproved claim allows drop, unchanged claim blocks drop, verified_effective action allows drop — all via auto-derivation
+- 19:42 · renamed tests/fixtures/state_v1_S1.json → a2_state_v1_S1.json (avoid clash with Alibek's fixture)
+- 19:45 · ran full pytest including test_llm.py: 134/134 passed
 
 ## Summary
 Merged Matteo's P0 foundations branch and migrated all A2 code to the official contracts.py
