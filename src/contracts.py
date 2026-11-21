@@ -1,11 +1,11 @@
-﻿"""CaseState: the shared contract between all agents (PROJECT.md ┬º4).
+"""CaseState: the shared contract between all agents (PROJECT.md §4).
 
 Owned by A0. Field names are binding: change them only through the Decision log
-(PROJECT.md ┬º12), never inside an agent's own chat.
+(PROJECT.md §12), never inside an agent's own chat.
 
 What is enforced here (per object, at validation time):
   - ID formats (KB-xx / U-xx, C-xxx, ACT-xxx) and unique IDs inside one state
-  - domain score = severity ├ù likelihood
+  - domain score = severity × likelihood
   - every claim change_history entry has a reason and >= 1 source_id;
     the claim's current status equals the last history entry
   - an action can be verified_effective/ineffective only with result evidence
@@ -53,7 +53,8 @@ EvidenceStrength = Literal["strong", "moderate", "weak"]
 Domain = Literal["reputational", "economic", "legal_regulatory"]
 
 Timeframe = Literal["24h", "7d", "30d"]
-ImpactBasis = Literal["company_data", "precedent", "general_knowledge", "incident_evidence"]
+# incident_evidence (D-013): based on evidence about the current incident (e.g. U-xx), not an ACME record
+ImpactBasis = Literal["company_data", "incident_evidence", "precedent", "general_knowledge"]
 FloorId = Literal["F1", "F2", "F3", "F4"]
 Confidence = Literal["low", "medium", "high"]
 RiskLevel = Literal["Low", "Medium", "High", "Critical"]
@@ -77,7 +78,7 @@ AgentId = Literal["A0", "A1", "A2", "A2a", "A2b", "A2c", "A3", "A4", "A5"]
 SOURCE_ID_PATTERN = r"^(KB-\d{2}|U-\d{2,})$"
 CLAIM_ID_PATTERN = r"^C-\d{3,}$"
 ACTION_ID_PATTERN = r"^ACT-\d{3,}$"
-KB_SOURCE_IDS: tuple[str, ...] = tuple(f"KB-{i:02d}" for i in range(1, 14))  # PROJECT.md ┬º8
+KB_SOURCE_IDS: tuple[str, ...] = tuple(f"KB-{i:02d}" for i in range(1, 14))  # PROJECT.md §8
 
 
 class _Model(BaseModel):
@@ -99,7 +100,7 @@ class _Model(BaseModel):
 class TurnInput(_Model):
     intent: Intent
     user_text: str = ""
-    # ┬º4 example lists source IDs (["U-03"]). A0 passes the saved file paths to A1;
+    # §4 example lists source IDs (["U-03"]). A0 passes the saved file paths to A1;
     # once A1 has registered them, A0 stores the assigned U-xx IDs here.
     attachments: list[str] = Field(default_factory=list)
 
@@ -172,7 +173,7 @@ class ImpactItem(_Model):
 class DomainImpact(_Model):
     severity: int = Field(ge=1, le=4)
     likelihood: int = Field(ge=1, le=4)
-    score: int | None = Field(default=None, description="severity ├ù likelihood; filled automatically")
+    score: int | None = Field(default=None, description="severity × likelihood; filled automatically")
     severity_reason: str
     likelihood_reason: str
     impacts: list[ImpactItem] = Field(default_factory=list)
@@ -183,7 +184,7 @@ class DomainImpact(_Model):
     def _score_is_product(self) -> DomainImpact:
         expected = self.severity * self.likelihood
         if self.score is not None and self.score != expected:
-            raise ValueError(f"score {self.score} != severity├ùlikelihood = {expected}")
+            raise ValueError(f"score {self.score} != severity×likelihood = {expected}")
         self.score = expected
         return self
 
@@ -243,6 +244,9 @@ class Action(_Model):
     approver: str | None = None
     timing: str
     priority: Priority
+    # D-013: set by A3 when a focus is set; the report sorts by priority, then focus.
+    # None = no focus set / not evaluated. Never affects scores (D-005).
+    focus_related: bool | None = None
     domains: list[Domain] = Field(default_factory=list)
     status: ActionStatus
     options_considered: list[ActionOption] = Field(default_factory=list)
@@ -320,8 +324,11 @@ class Closure(_Model):
 
 class Report(_Model):
     pdf_path: str | None = None
-    # Section name -> text, e.g. {"situation": ..., "changes_summary": ...}. A5 owns the keys.
+    # Section name -> text, e.g. {"executive_summary", "situation", "changes_summary",
+    # "closure_summary"}. A5 owns the keys; leave a key out rather than sending null.
     narrative: dict[str, str] = Field(default_factory=dict)
+    # D-013: results of A5's checks on its narrative (Appendix C). None = checks not run.
+    narrative_warnings: list[str] | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -426,7 +433,7 @@ class CaseState(_Model):
 
 
 # ---------------------------------------------------------------------------
-# Agent outputs: what each agent returns to A0 (PROJECT.md ┬º3.3 "Writes" column).
+# Agent outputs: what each agent returns to A0 (PROJECT.md §3.3 "Writes" column).
 # Agents return only new or changed items; A0 merges them into CaseState by ID
 # (never deletes) and enforces the merge rules. risk is never an agent output.
 # ---------------------------------------------------------------------------
@@ -455,6 +462,7 @@ class A4Output(_Model):
 class A5Output(_Model):
     narrative: dict[str, str] = Field(default_factory=dict)  # report section -> text
     changes_summary: str = ""  # the "why" for changelog[-1].summary
+    narrative_warnings: list[str] | None = None  # D-013, copied to report.narrative_warnings
 
 
 def new_case(case_id: str) -> CaseState:
