@@ -1,0 +1,142 @@
+{
+  "sources": [
+    {
+      "source_id": "U-01",
+      "title": "Customer care summary: 4 PCX-100 heat contacts in DE, 1-20 Nov 2026",
+      "file": null,
+      "origin": "user_text",
+      "date": "2026-11-20",
+      "category": "incident_evidence",
+      "time_relevance": "current",
+      "duplicate_of": null,
+      "reliability_note": "Pasted by the user from the care system; no ticket export attached",
+      "added_in_version": 1
+    },
+    {
+      "source_id": "U-02",
+      "title": "Screenshot of TownSquare post by @kai_b (smoke while charging)",
+      "file": "cases/CASE-001/inputs/post.png",
+      "origin": "user_upload",
+      "date": "2026-11-20",
+      "category": "incident_evidence",
+      "time_relevance": "current",
+      "duplicate_of": null,
+      "reliability_note": "Screenshot only; original link not provided",
+      "added_in_version": 1
+    },
+    {
+      "source_id": "U-03",
+      "title": "Newspaper web article quoting the @kai_b post",
+      "file": null,
+      "origin": "user_text",
+      "date": "2026-11-21",
+      "category": "incident_evidence",
+      "time_relevance": "current",
+      "duplicate_of": "U-02",
+      "reliability_note": "Repeats the same post; not a second report",
+      "added_in_version": 1
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "C-001",
+      "text": "Customers in DE reported PCX-100 units feeling hot during charging (4 contacts in November)",
+      "status": "confirmed",
+      "evidence_strength": "moderate",
+      "source_ids": [
+        "U-01"
+      ],
+      "contradicted_by": [],
+      "domains": [
+        "reputational"
+      ],
+      "product": "PCX-100",
+      "batch": null,
+      "market": "DE",
+      "first_seen_version": 1,
+      "last_changed_version": 1,
+      "change_history": [
+        {
+          "version": 1,
+          "from": null,
+          "to": "confirmed",
+          "reason": "Contacts are logged in the care system (the contacts exist; no defect is implied)",
+          "source_ids": [
+            "U-01"
+          ]
+        }
+      ]
+    },
+    {
+      "claim_id": "C-002",
+      "text": "A PCX-100 unit emitted smoke while charging a laptop",
+      "status": "unconfirmed",
+      "evidence_strength": "weak",
+      "source_ids": [
+        "U-02",
+        "U-03"
+      ],
+      "contradicted_by": [],
+      "domains": [
+        "reputational",
+        "legal_regulatory"
+      ],
+      "product": "PCX-100",
+      "batch": null,
+      "market": "DE",
+      "first_seen_version": 1,
+      "last_changed_version": 1,
+      "change_history": [
+        {
+          "version": 1,
+          "from": null,
+          "to": "unconfirmed",
+          "reason": "Single social post seen as a screenshot; U-03 is a copy of it, not a second report",
+          "source_ids": [
+            "U-02"
+          ]
+        }
+      ]
+    },
+    {
+      "claim_id": "C-003",
+      "text": "The July VN-3 sampling shows September PCX-100 batches are fine",
+      "status": "misleading",
+      "evidence_strength": "strong",
+      "source_ids": [
+        "KB-11"
+      ],
+      "contradicted_by": [
+        "KB-13"
+      ],
+      "domains": [
+        "legal_regulatory"
+      ],
+      "product": "PCX-100",
+      "batch": "PCX-2609-A",
+      "market": null,
+      "first_seen_version": 1,
+      "last_changed_version": 1,
+      "change_history": [
+        {
+          "version": 1,
+          "from": null,
+          "to": "misleading",
+          "reason": "VN-3 sampled 30 July units only; September batches were not covered",
+          "source_ids": [
+            "KB-11",
+            "KB-13"
+          ]
+        }
+      ]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Which batch does the @kai_b unit come from?",
+      "owner": "Tom Weber (Customer Care)",
+      "raised_in_version": 1,
+      "closed_in_version": null
+    }
+  ]
+}

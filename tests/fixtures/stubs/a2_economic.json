@@ -1,0 +1,24 @@
+{
+  "severity": 2,
+  "likelihood": 2,
+  "score": 4,
+  "severity_reason": "Batch hold setup €5,000 per batch; replacement €30/unit only if a remedy is needed",
+  "likelihood_reason": "No confirmed defect yet",
+  "impacts": [
+    {
+      "description": "Cost of a precautionary warehouse hold on PCX-2609-B",
+      "if_unaddressed": "If a defect is confirmed later, more units reach customers and remedy cost grows",
+      "timeframe": "7d",
+      "stakeholders": [
+        "ACME finance"
+      ],
+      "source_ids": [
+        "KB-12",
+        "KB-13"
+      ],
+      "basis": "company_data"
+    }
+  ],
+  "floor_triggers": [],
+  "evidence_confidence": "medium"
+}
