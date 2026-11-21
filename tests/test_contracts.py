@@ -109,6 +109,24 @@ def test_bad_source_id_rejected(raw, bad):
         CaseState.model_validate(raw)
 
 
+def test_d013_additions_are_optional_and_validated(raw):
+    # existing data (without the new fields) stays valid
+    state = CaseState.model_validate(raw)
+    assert state.actions[0].focus_related is None and state.report.narrative_warnings is None
+    # new fields accepted
+    raw["actions"][0]["focus_related"] = True
+    raw["report"]["narrative_warnings"] = ["executive_summary: 92 words (limit 80)"]
+    raw["impacts"]["reputational"]["impacts"][0]["basis"] = "incident_evidence"
+    raw["report"]["narrative"]["closure_summary"] = "Case closed with residual risk Medium."
+    state = CaseState.model_validate(raw)
+    assert state.actions[0].focus_related is True
+    assert state.impacts.reputational.impacts[0].basis == "incident_evidence"
+    # narrative values must be text: omit a key instead of sending null
+    raw["report"]["narrative"]["closure_summary"] = None
+    with pytest.raises(ValidationError):
+        CaseState.model_validate(raw)
+
+
 def test_reference_errors_reports_dangling_ids(raw):
     raw["claims"][0]["source_ids"] = ["U-99"]
     raw["closure"] = {"remaining_risk": "Medium", "open_actions": ["ACT-999"], "reopen_conditions": []}
