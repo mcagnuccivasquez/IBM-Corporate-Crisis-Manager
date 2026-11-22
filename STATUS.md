@@ -1,6 +1,6 @@
 # STATUS — current state of the project
 
-_Last updated: 2026-11-21 18:05 · by: Matteo (p0-foundations session)_
+_Last updated: 2026-11-22 01:18 · by: Alibek (a4-fixture-fixes session)_
 
 **Next deadline:** Playback 2 · **Tue 24 Nov 2026** · demo target: scenario S1 turn 1 → Report v1 PDF
 **Final:** Wed 2 Dec 2026
