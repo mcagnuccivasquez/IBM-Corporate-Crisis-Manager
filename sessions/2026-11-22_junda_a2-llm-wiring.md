@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Who | Junda |
-| Start → end | 18:41 → <HH:MM> |
+| Start → end | 18:41 → 17:36 |
 | Tool / LLM | IBM Bob (Claude) |
 | Working on | A2 Impact & Risk — LLM wiring + migrate to Matteo's official contracts.py |
 | Branch | junda/a2-impact-risk |
@@ -25,31 +25,38 @@
 - 19:40 · added TestF4AutoDerivation (3 tests): disproved claim allows drop, unchanged claim blocks drop, verified_effective action allows drop — all via auto-derivation
 - 19:42 · renamed tests/fixtures/state_v1_S1.json → a2_state_v1_S1.json (avoid clash with Alibek's fixture)
 - 19:45 · ran full pytest including test_llm.py: 134/134 passed
+- 19:50 · Matteo review: 3 final issues — remove _STUB_MODE, F4 drop reason, Legal/regulatory cosmetic
+- 19:50 · removed _STUB_MODE auto-detection from a2_impact.py; always call call_structured; LLMError on missing key; tests rewritten to call _stub_domain_assessment directly
+- 19:55 · added F4 "drop allowed" reason naming justification IDs (PROJECT §6); updated F4 test assertions to check for "F4: drop ... allowed — C-001"
+- 19:55 · fixed "Legal_regulatory" → "Legal/regulatory" in risk.py reason lines; removed redundant capitalize() logic
+- 20:00 · git merge origin/main (STATUS.md conflict only; kept both session entries); 140/140 passed
+- 20:05 · pushed; opened PR junda/a2-impact-risk → main
+- 17:36 · session end
 
 ## Summary
-Merged Matteo's P0 foundations branch and migrated all A2 code to the official contracts.py
-schema. The key interface change: a2_impact.run() is now called once per domain (matching
-the pipeline.py AgentSet.a2 slot), returning a DomainImpact. compute_risk() now takes
-(state, prev) instead of a plain list. All 120 tests pass, including Matteo's pipeline,
-contracts, and KB tests. A2 is now fully wired — LLM calls will activate when ANTHROPIC_API_KEY
-is set; stub mode remains for CI/testing.
+Full A2 component is complete and PR is open. Merged P0 foundations, migrated all types
+to official contracts.py schema, wired call_structured (always; no silent stub fallback),
+F4 auto-derives claim/action changes from state vs prev, reason lines match PROJECT §4
+exactly, fixture renamed, 140/140 tests passing including test_llm.py.
 
 ## Done
 - Merged origin/matteo/p0-foundations (contracts.py, llm.py, kb.py, pipeline.py, KB-01..13)
-- Migrated src/risk.py to official schema (DomainImpact, Risk, Confidence, FloorId); new API: compute_risk(state, prev)
-- Migrated src/agents/a2_impact.py: new interface run(state, turn, domain) → DomainImpact; call_structured wired with correct args
-- Updated tests/test_risk.py: 37 tests all passing with new API
-- Updated tests/test_a2_integration.py: 15 tests all passing with new per-domain interface
-- 120/120 tests passing
+- Migrated src/risk.py: official schema, compute_risk(state, prev), F4 auto-derivation, reason format per PROJECT §4
+- Migrated src/agents/a2_impact.py: run(state, turn, domain) → DomainImpact; call_structured always called; no _STUB_MODE
+- Renamed tests/fixtures/state_v1_S1.json → a2_state_v1_S1.json
+- Updated tests/test_risk.py: 40 tests (inc. 3 new F4 auto-derivation tests)
+- Updated tests/test_a2_integration.py: 16 tests calling _stub_domain_assessment directly
+- 140/140 tests passing
+- PR open: junda/a2-impact-risk → main
 
 ## Not done / blockers
-- LLM calls only activate when ANTHROPIC_API_KEY is set; end-to-end test with real API pending
-- Full end-to-end pipeline test (S1 turn 1 → PDF) pending A1 (Giacomo) and app.py (Matteo)
+- End-to-end test with real ANTHROPIC_API_KEY still pending (needs key)
+- Full pipeline run (S1 turn 1 → PDF) pending A1 (Giacomo)
 
 ## Next steps (for whoever picks this up)
-1. Set ANTHROPIC_API_KEY and run: python -c "from src.agents.a2_impact import run; ..." to verify real LLM path
-2. When Giacomo finishes A1, run the full pipeline with use_stubs=False for A2 only
-3. Consider adding the end-to-end S1 scenario test once A0 app.py and A1 land
+1. After PR merged: pull main, verify 140 tests still pass on main
+2. When Giacomo finishes A1, run pipeline with use_stubs=False for A2 only
+3. Add end-to-end S1 scenario test once A1 + app.py land
 
 ## Files touched
 - sessions/2026-11-22_junda_a2-llm-wiring.md (this file)
