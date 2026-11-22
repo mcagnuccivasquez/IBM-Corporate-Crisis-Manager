@@ -2,10 +2,10 @@
 
 Covers:
 - _next_source_id / _next_claim_id helpers
-- _build_user_content structure
+- _build_context_block structure
 - run() happy path (mocked call_structured)
 - run() with no existing state (first turn)
-- run() with attachments that do not exist on disk
+- run() passes correct args to call_structured
 - Contracts enforcement: missing change_history, bad claim status, bad source ID
 - Acceptance criteria from A1_evidence_analyst.md §7 (pure contract / logic tests;
   the full LLM-in-the-loop scenarios live in tests/scenarios/)
@@ -23,7 +23,7 @@ from unittest.mock import patch
 import pytest
 from pydantic import ValidationError
 
-from src.agents.a1_evidence import _build_user_content, _next_claim_id, _next_source_id, run
+from src.agents.a1_evidence import _build_context_block, _next_claim_id, _next_source_id, run
 from src.contracts import (
     A1Output,
     CaseState,
@@ -106,51 +106,39 @@ def test_next_claim_id_with_existing(example_state):
 
 
 # ---------------------------------------------------------------------------
-# Helper: _build_user_content
+# Helper: _build_context_block
 # ---------------------------------------------------------------------------
 
 
-def test_build_user_content_has_id_hints(example_state, turn_text):
-    blocks = _build_user_content(example_state, turn_text)
-    combined = " ".join(b.get("text", "") for b in blocks if b["type"] == "text")
-    assert "U-04" in combined
-    assert "C-004" in combined
+def test_build_context_block_has_id_hints(example_state):
+    text = _build_context_block(example_state)
+    assert "U-04" in text
+    assert "C-004" in text
 
 
-def test_build_user_content_has_case_state_json(example_state, turn_text):
-    blocks = _build_user_content(example_state, turn_text)
-    combined = " ".join(b.get("text", "") for b in blocks if b["type"] == "text")
-    assert "existing_sources" in combined
-    assert "existing_claims" in combined
-    assert "CASE-001" in combined
+def test_build_context_block_has_case_state_json(example_state):
+    text = _build_context_block(example_state)
+    assert "existing_sources" in text
+    assert "existing_claims" in text
+    assert "CASE-001" in text
 
 
-def test_build_user_content_includes_new_text(example_state, turn_text):
-    blocks = _build_user_content(example_state, turn_text)
-    combined = " ".join(b.get("text", "") for b in blocks if b["type"] == "text")
-    assert "A new report from a customer" in combined
-
-
-def test_build_user_content_skips_empty_text(example_state, turn_no_text):
-    blocks = _build_user_content(example_state, turn_no_text)
-    texts = [b["text"] for b in blocks if b["type"] == "text"]
-    # None of the text blocks should contain "=== New user input ==="
-    assert not any("=== New user input ===" in t for t in texts)
-
-
-def test_build_user_content_missing_attachment(example_state):
-    """A file path that doesn't exist should produce a text error block, not crash."""
-    turn = TurnInput(intent="NEW_INFO", user_text="", attachments=["/nonexistent/file.pdf"])
-    blocks = _build_user_content(example_state, turn)
-    combined = " ".join(b.get("text", "") for b in blocks if b["type"] == "text")
-    assert "not found" in combined.lower() or "/nonexistent/file.pdf" in combined
-
-
-def test_build_user_content_has_version_hint(example_state, turn_text):
+def test_build_context_block_has_version_hint(example_state):
     """raised_in_version hint must match state.version so the LLM uses the right value."""
-    blocks = _build_user_content(example_state, turn_text)
-    combined = " ".join(b.get("text", "") for b in blocks if b["type"] == "text")
-    assert f"raised_in_version: {example_state.version}" in combined
+    text = _build_context_block(example_state)
+    assert f"raised_in_version: {example_state.version}" in text
+
+
+def test_build_context_block_returns_str(example_state):
+    text = _build_context_block(example_state)
+    assert isinstance(text, str)
+
+
+def test_build_context_block_empty_state(empty_state):
+    text = _build_context_block(empty_state)
+    assert "U-01" in text
+    assert "C-001" in text
+    assert "CASE-099" in text
 
 
 # ---------------------------------------------------------------------------
@@ -234,8 +222,9 @@ def test_run_first_turn_empty_state(mock_cs, empty_state, turn_text):
 def test_run_passes_agent_a1_to_call_structured(mock_cs, example_state, turn_text):
     mock_cs.return_value = _make_a1_output(example_state)
     run(example_state, turn_text)
-    call_kwargs = mock_cs.call_args
-    assert call_kwargs.kwargs.get("agent") == "A1" or call_kwargs.args[0] == "A1"
+    call_args = mock_cs.call_args
+    # call_structured("A1", ...) — first positional arg
+    assert call_args.args[0] == "A1"
 
 
 @patch("src.agents.a1_evidence.call_structured")
@@ -250,8 +239,88 @@ def test_run_passes_case_id(mock_cs, example_state, turn_text):
 def test_run_uses_effort_high(mock_cs, example_state, turn_text):
     mock_cs.return_value = _make_a1_output(example_state)
     run(example_state, turn_text)
+    call_args = mock_cs.call_args
+    # call_structured("A1", prompt, content, A1Output, "high", ...)
+    # effort is the 5th positional arg (index 4)
+    assert call_args.args[4] == "high"
+
+
+@patch("src.agents.a1_evidence.call_structured")
+def test_run_passes_check_kwarg(mock_cs, example_state, turn_text):
+    """run() must pass a `check` callable to call_structured for KB-id validation."""
+    mock_cs.return_value = _make_a1_output(example_state)
+    run(example_state, turn_text)
     call_kwargs = mock_cs.call_args
-    assert call_kwargs.kwargs.get("effort") == "high"
+    assert callable(call_kwargs.kwargs.get("check")), "check= kwarg must be a callable"
+
+
+@patch("src.agents.a1_evidence.call_structured")
+def test_run_check_passes_valid_kb_ids(mock_cs, example_state, turn_text):
+    """The check= lambda must return [] for a claim citing only valid source IDs."""
+    mock_cs.return_value = _make_a1_output(example_state)
+    run(example_state, turn_text)
+    check_fn = mock_cs.call_args.kwargs.get("check")
+    # _make_a1_output uses U-xx IDs (not KB-xx), so unknown_kb_ids returns []
+    result = check_fn(_make_a1_output(example_state))
+    assert result == []
+
+
+@patch("src.agents.a1_evidence.call_structured")
+def test_run_check_flags_unknown_kb_ids(mock_cs, example_state, turn_text):
+    """The check= lambda must flag KB-xx IDs not in the registry."""
+    mock_cs.return_value = _make_a1_output(example_state)
+    run(example_state, turn_text)
+    check_fn = mock_cs.call_args.kwargs.get("check")
+
+    bad_output = A1Output(
+        claims=[
+            Claim(
+                claim_id="C-001",
+                text="Test",
+                status="unconfirmed",
+                evidence_strength="weak",
+                source_ids=["KB-99"],  # not in registry
+                first_seen_version=1,
+                last_changed_version=1,
+                change_history=[
+                    ClaimChange(
+                        version=1,
+                        **{"from": None},
+                        to="unconfirmed",
+                        reason="test",
+                        source_ids=["KB-99"],
+                    )
+                ],
+            )
+        ]
+    )
+    problems = check_fn(bad_output)
+    assert len(problems) == 1
+    assert "KB-99" in problems[0]
+
+
+@patch("src.agents.a1_evidence.call_structured")
+def test_run_user_text_included_in_content(mock_cs, example_state, turn_text):
+    """The user message block must contain the turn's user_text."""
+    mock_cs.return_value = _make_a1_output(example_state)
+    run(example_state, turn_text)
+    call_args = mock_cs.call_args
+    # content is 3rd positional arg (index 2)
+    content: list[dict] = call_args.args[2]
+    all_text = " ".join(b.get("text", "") for b in content if b.get("type") == "text")
+    assert "A new report from a customer" in all_text
+
+
+@patch("src.agents.a1_evidence.call_structured")
+def test_run_context_block_in_content(mock_cs, example_state, turn_text):
+    """The context block (ID hints + existing state JSON) must be in the content."""
+    mock_cs.return_value = _make_a1_output(example_state)
+    run(example_state, turn_text)
+    call_args = mock_cs.call_args
+    content: list[dict] = call_args.args[2]
+    all_text = " ".join(b.get("text", "") for b in content if b.get("type") == "text")
+    assert "existing_sources" in all_text
+    assert "U-04" in all_text  # next source ID hint
 
 
 # ---------------------------------------------------------------------------

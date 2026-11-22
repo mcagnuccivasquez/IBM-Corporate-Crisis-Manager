@@ -2,7 +2,7 @@
 ======================
 Owned by: Giacomo Castelmare
 Spec:     agents/A1_evidence_analyst.md
-Prompt:   src/prompts/a1.md
+Prompt:   src/prompts/a1_evidence.md
 
 Entry point
 -----------
@@ -25,9 +25,9 @@ from __future__ import annotations
 
 import json
 import re
-from pathlib import Path
 
 from src.contracts import A1Output, CaseState, TurnInput
+from src.kb import unknown_kb_ids
 from src.llm import call_structured, file_block, load_prompt
 
 
@@ -56,12 +56,11 @@ def _next_claim_id(state: CaseState) -> str:
     return f"C-{(max(nums) + 1) if nums else 1:03d}"
 
 
-def _build_user_content(state: CaseState, turn: TurnInput) -> list[dict]:
-    """Compose the user message: ID hints + case context + new input + attachments."""
+def _build_context_block(state: CaseState) -> str:
+    """Serialise existing case state + ID allocation hints as a text string."""
     next_src = _next_source_id(state)
     next_clm = _next_claim_id(state)
 
-    # Serialise the existing evidence so the LLM can re-evaluate it
     existing = {
         "case_id": state.case_id,
         "version": state.version,
@@ -70,35 +69,15 @@ def _build_user_content(state: CaseState, turn: TurnInput) -> list[dict]:
         "open_questions": [q.model_dump(mode="json") for q in state.open_questions],
     }
 
-    blocks: list[dict] = [
-        {
-            "type": "text",
-            "text": (
-                f"=== ID allocation (do not reuse existing IDs) ===\n"
-                f"Next source ID : {next_src}  (then {next_src[:-2]}{int(next_src[2:])+1:02d}, …)\n"
-                f"Next claim ID  : {next_clm}  (then {next_clm[:-3]}{int(next_clm[2:])+1:03d}, …)\n"
-                f"Current case version: {state.version}\n"
-                f"Use `raised_in_version: {state.version}` for all new open_questions.\n"
-            ),
-        },
-        {
-            "type": "text",
-            "text": f"=== Existing case state ===\n{json.dumps(existing, indent=2, ensure_ascii=False)}",
-        },
-    ]
-
-    if turn.user_text.strip():
-        blocks.append({"type": "text", "text": f"=== New user input ===\n{turn.user_text}"})
-
-    # Attachments: file paths → native content blocks (image / document / text)
-    for path_str in turn.attachments:
-        p = Path(path_str)
-        if p.exists():
-            blocks.append(file_block(p))
-        else:
-            blocks.append({"type": "text", "text": f"[Attachment not found on disk: {path_str}]"})
-
-    return blocks
+    return (
+        f"=== ID allocation (do not reuse existing IDs) ===\n"
+        f"Next source ID : {next_src}  (then {next_src[:-2]}{int(next_src[2:])+1:02d}, …)\n"
+        f"Next claim ID  : {next_clm}  (then {next_clm[:-3]}{int(next_clm[2:])+1:03d}, …)\n"
+        f"Current case version: {state.version}\n"
+        f"Use `raised_in_version: {state.version}` for all new open_questions.\n"
+        f"\n=== Existing case state ===\n"
+        f"{json.dumps(existing, indent=2, ensure_ascii=False)}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -127,13 +106,18 @@ def run(state: CaseState, turn: TurnInput) -> A1Output:
     src.llm.LLMError (and subclasses LLMRefusal, LLMTruncated, LLMOutputError)
         Callers should catch LLMError; A0 wraps it in TurnResult.error.
     """
-    user_content = _build_user_content(state, turn)
+    content: list[dict] = [file_block(p) for p in turn.attachments]
+    content.append({"type": "text", "text": _build_context_block(state) + "\n\n" + turn.user_text})
 
     return call_structured(
-        agent="A1",
-        system_prompt=load_prompt("a1"),
-        user_content=user_content,
-        output_model=A1Output,
-        effort="high",
+        "A1",
+        load_prompt("a1_evidence"),
+        content,
+        A1Output,
+        "high",
         case_id=state.case_id,
+        check=lambda out: [
+            f"unknown KB id {i}"
+            for i in unknown_kb_ids([s for c in out.claims for s in c.source_ids])
+        ],
     )

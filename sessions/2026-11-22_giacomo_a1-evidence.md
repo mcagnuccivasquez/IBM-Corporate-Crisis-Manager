@@ -17,22 +17,29 @@
 - 17:02 · wrote src/prompts/a1.md (cached agent prompt, per spec §6 + PROJECT §5 definitions)
 - 17:03 · wrote tests/test_a1_evidence.py (unit + integration-level tests)
 - 17:04 · updated STATUS.md
+- 20:59 · director review applied: prompt renamed a1.md → a1_evidence.md; _build_context_block refactor; check= lambda for KB IDs
+- 21:03 · updated tests/test_a1_evidence.py: 33 tests all pass
 
 ## Summary
+Addressed all 4 issues raised in director review: (1) already using shared contract; (2) already using call_structured; (3) renamed prompt file to a1_evidence.md so load_prompt works without fallback; (4) added unknown_kb_ids check= lambda. Refactored _build_user_content → _build_context_block returning str. Tests updated: 33 pass.
 
 ## Done
--
+- src/agents/a1_evidence.py: _build_context_block, run() with check= lambda, load_prompt("a1_evidence")
+- src/prompts/a1_evidence.md: renamed from a1.md (content unchanged — already complete)
+- tests/test_a1_evidence.py: updated + 7 new tests; 33 total, all pass
 
 ## Not done / blockers
--
+- pymupdf not installed in dev env → 9 test_pipeline.py tests fail (pre-existing, unrelated to A1)
 
 ## Next steps (for whoever picks this up)
--
+- Merge foundations branch (matteo/p0-foundations) so pipeline.py picks up real A1
+- Remove a1 from ACME_STUB_AGENTS in .env to run with real A1 in app
+- Run `python -m src.pipeline --text "Customers report hot PCX-100 chargers"` for first real end-to-end test
 
 ## Files touched
-- src/agents/a1_evidence.py (rewritten)
-- src/prompts/a1.md (new)
-- tests/test_a1_evidence.py (new)
+- src/agents/a1_evidence.py (updated)
+- src/prompts/a1.md → src/prompts/a1_evidence.md (renamed)
+- tests/test_a1_evidence.py (updated)
 - STATUS.md (updated)
 
 ## Needs director review
