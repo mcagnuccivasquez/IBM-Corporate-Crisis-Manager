@@ -1,0 +1,148 @@
+{
+  "case_id": "CASE-001",
+  "version": 1,
+  "created_at": "2026-11-21T09:00:00",
+  "updated_at": "2026-11-21T09:00:00",
+  "status": "open",
+  "focus": null,
+  "turn_input": {
+    "intent": "NEW_INFO",
+    "user_text": "We just received a screenshot of a TownSquare post: user @alex_de says their PCX-100 'emitted smoke and left a burn mark on my desk' while charging a laptop. They say they bought it in October in Germany.",
+    "attachments": ["U-01"]
+  },
+  "sources": [
+    {
+      "source_id": "U-01",
+      "title": "Screenshot of TownSquare post by @alex_de",
+      "file": "cases/CASE-001/inputs/post_alex_de.png",
+      "origin": "user_upload",
+      "date": "2026-11-20",
+      "category": "incident_evidence",
+      "time_relevance": "current",
+      "duplicate_of": null,
+      "reliability_note": "Screenshot only; original URL and capture time not provided",
+      "added_in_version": 1
+    },
+    {
+      "source_id": "KB-01",
+      "title": "ACME Company Overview 2026",
+      "file": "knowledge_base/ACME_company_files/ACME_company_overview_2026.pdf",
+      "origin": "kb",
+      "date": "2026-09-01",
+      "category": "reference",
+      "time_relevance": "current",
+      "duplicate_of": null,
+      "reliability_note": null,
+      "added_in_version": 1
+    },
+    {
+      "source_id": "KB-12",
+      "title": "RE: Costs for PowerCharge returns",
+      "file": "knowledge_base/ACME_company_files/RE_costs_for_PowerCharge_returns.pdf",
+      "origin": "kb",
+      "date": "2026-09-30",
+      "category": "planning_assumption",
+      "time_relevance": "current",
+      "duplicate_of": null,
+      "reliability_note": "Finance assumptions: €30/unit replacement+logistics, €5k/batch hold setup",
+      "added_in_version": 1
+    },
+    {
+      "source_id": "KB-13",
+      "title": "PCX Stock Export 22 Oct",
+      "file": "knowledge_base/ACME_company_files/PCX_stock_export_22Oct.csv",
+      "origin": "kb",
+      "date": "2026-10-22",
+      "category": "company_record",
+      "time_relevance": "current",
+      "duplicate_of": null,
+      "reliability_note": "Delivered-to-channel quantities; delivered ≠ sold",
+      "added_in_version": 1
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "C-001",
+      "text": "A PCX-100 unit emitted smoke and left a burn mark on a desk while charging a laptop",
+      "status": "unconfirmed",
+      "evidence_strength": "weak",
+      "source_ids": ["U-01"],
+      "contradicted_by": [],
+      "domains": ["reputational", "economic", "legal_regulatory"],
+      "product": "PCX-100",
+      "batch": null,
+      "market": "DE",
+      "first_seen_version": 1,
+      "last_changed_version": 1,
+      "change_history": [
+        {
+          "version": 1,
+          "from": null,
+          "to": "unconfirmed",
+          "reason": "Single screenshot with no independent verification; original URL not provided",
+          "source_ids": ["U-01"]
+        }
+      ]
+    },
+    {
+      "claim_id": "C-002",
+      "text": "The affected PCX-100 unit was purchased in Germany in October 2026",
+      "status": "unconfirmed",
+      "evidence_strength": "weak",
+      "source_ids": ["U-01"],
+      "contradicted_by": [],
+      "domains": ["economic", "legal_regulatory"],
+      "product": "PCX-100",
+      "batch": null,
+      "market": "DE",
+      "first_seen_version": 1,
+      "last_changed_version": 1,
+      "change_history": [
+        {
+          "version": 1,
+          "from": null,
+          "to": "unconfirmed",
+          "reason": "Self-reported by poster; not independently verified",
+          "source_ids": ["U-01"]
+        }
+      ]
+    }
+  ],
+  "impacts": {
+    "reputational": null,
+    "economic": null,
+    "legal_regulatory": null
+  },
+  "risk": null,
+  "stakeholders": [],
+  "actions": [],
+  "outlook": null,
+  "qa": null,
+  "open_questions": [
+    {
+      "question": "Can we obtain the original post URL and capture timestamp for U-01?",
+      "owner": "Anna Keller (Communications)",
+      "raised_in_version": 1,
+      "closed_in_version": null
+    },
+    {
+      "question": "Which batch is the affected unit from? Customer contacted to provide purchase receipt or unit label.",
+      "owner": "Tom Weber (Customer Care)",
+      "raised_in_version": 1,
+      "closed_in_version": null
+    }
+  ],
+  "changelog": [
+    {
+      "version": 1,
+      "risk_from": null,
+      "risk_to": null,
+      "new_source_ids": ["U-01"],
+      "claim_changes": ["C-001 new (unconfirmed)", "C-002 new (unconfirmed)"],
+      "action_changes": [],
+      "summary": null
+    }
+  ],
+  "closure": null,
+  "report": null
+}

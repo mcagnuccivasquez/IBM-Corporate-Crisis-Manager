@@ -11,7 +11,8 @@ CLI (stubs, no API key needed):
 
 Agents are looked up in a registry (AgentSet): a teammate's real module is used as
 soon as it exists (e.g. src/agents/a1_evidence.py with `run`), otherwise a stub that
-returns fixture JSON. `--stubs` / use_stubs=True forces stubs everywhere.
+returns fixture JSON. `--stubs` / use_stubs=True forces stubs everywhere;
+ACME_STUB_AGENTS=a1,a3 in .env forces stubs for just those agents (e.g. one not ready yet).
 
 Storage: cases/<case_id>/state_vN.json + report_vN.pdf (immutable per version),
 inputs/ (uploaded files), case_meta.json (focus between versions), trace.jsonl (llm.py).
@@ -23,6 +24,7 @@ import argparse
 import importlib
 import json
 import logging
+import os
 import shutil
 import sys
 from concurrent.futures import ThreadPoolExecutor
@@ -31,6 +33,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
+from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
 from src.agents import stubs
@@ -135,20 +138,51 @@ def _import_real(module: str, func: str) -> Callable[..., Any] | None:
     return getattr(mod, func)
 
 
+ALL_SLOTS = (*REAL_AGENTS, "classify", "answer")
+FORCED_STUB_LABEL = "stub (ACME_STUB_AGENTS)"
+
+
+def forced_stub_slots() -> set[str]:
+    """Slots forced to their stub via .env, e.g. ACME_STUB_AGENTS=a1,a3.
+
+    Use it while one teammate's agent exists but isn't ready, so the others can run for
+    real. Unknown names are ignored with a warning (a typo must not break the app)."""
+    load_dotenv(ROOT / ".env")
+    raw = os.environ.get("ACME_STUB_AGENTS", "")
+    names = {n.strip().lower() for n in raw.split(",") if n.strip()}
+    unknown = names - set(ALL_SLOTS)
+    if unknown:
+        log.warning("ACME_STUB_AGENTS: unknown agent(s) %s ignored; valid: %s", sorted(unknown), ", ".join(ALL_SLOTS))
+    return names & set(ALL_SLOTS)
+
+
 def load_agents(use_stubs: bool = False) -> AgentSet:
+    """use_stubs=True: every slot is a stub. Otherwise each slot uses its real module if it
+    exists, unless it's listed in ACME_STUB_AGENTS (then it isn't even imported)."""
     fns: dict[str, Any] = {}
     used: dict[str, str] = {}
+    forced = set(ALL_SLOTS) if use_stubs else forced_stub_slots()
     stub_map = {
         "a1": stubs.a1, "a2": stubs.a2, "risk": stubs.risk, "a3": stubs.a3,
         "a4": stubs.a4, "a5": stubs.a5, "render": stubs.render,
+        "classify": stubs.classify_intent, "answer": stubs.answer_question,
     }
-    for slot, (module, func) in REAL_AGENTS.items():
-        real = None if use_stubs else _import_real(module, func)
+    real_map: dict[str, tuple[Callable[..., Any] | None, str]] = {
+        "classify": (llm_classify_intent, "llm"),
+        "answer": (llm_answer_question, "llm"),
+    }
+    for slot in ALL_SLOTS:
+        if slot in forced:
+            fns[slot] = stub_map[slot]
+            used[slot] = "stub" if use_stubs else FORCED_STUB_LABEL
+            continue
+        if slot in REAL_AGENTS:
+            module, func = REAL_AGENTS[slot]
+            real, label = _import_real(module, func), f"{module}.{func}"
+        else:
+            real, label = real_map[slot]
         fns[slot] = real or stub_map[slot]
-        used[slot] = f"{module}.{func}" if real else "stub"
-    fns["classify"] = stubs.classify_intent if use_stubs else llm_classify_intent
-    fns["answer"] = stubs.answer_question if use_stubs else llm_answer_question
-    used["classify"] = used["answer"] = "stub" if use_stubs else "llm"
+        used[slot] = label if real else "stub"
     return AgentSet(**fns, used=used)
 
 
