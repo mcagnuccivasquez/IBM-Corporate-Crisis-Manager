@@ -165,6 +165,32 @@ def test_a5_narrative_warnings_reach_the_saved_state(tmp_cases):
     assert saved.report.narrative == {"executive_summary": "x", "situation": "y"}
 
 
+def test_acme_stub_agents_forces_selected_slots(monkeypatch):
+    monkeypatch.setenv("ACME_STUB_AGENTS", " A1, risk ,classify")
+    a = pipeline.load_agents(use_stubs=False)
+    assert a.a1 is stubs.a1 and a.used["a1"] == pipeline.FORCED_STUB_LABEL
+    assert a.risk is stubs.risk and a.used["risk"] == pipeline.FORCED_STUB_LABEL
+    assert a.classify is stubs.classify_intent and a.used["classify"] == pipeline.FORCED_STUB_LABEL
+    assert a.used["answer"] == "llm"  # not listed -> real
+    for slot in ("a2", "a3", "a4", "a5", "render"):  # not listed -> real module if it exists
+        assert not a.used[slot].startswith("stub (")
+
+
+def test_acme_stub_agents_unknown_name_is_ignored(monkeypatch, caplog):
+    monkeypatch.setenv("ACME_STUB_AGENTS", "a1,a9")
+    a = pipeline.load_agents(use_stubs=False)
+    assert a.used["a1"] == pipeline.FORCED_STUB_LABEL
+    assert "a9" in caplog.text
+
+
+def test_forced_stub_runs_a_full_turn(monkeypatch):
+    """With every slot forced, a turn runs end to end exactly like use_stubs=True."""
+    monkeypatch.setenv("ACME_STUB_AGENTS", ",".join(pipeline.ALL_SLOTS))
+    r = pipeline.run_turn(TEXT_V1, agents=pipeline.load_agents(use_stubs=False))
+    assert r.error is None and r.version == 1
+    assert set(r.agents_used.values()) == {pipeline.FORCED_STUB_LABEL}
+
+
 def test_stub_intents():
     assert stubs.classify_intent("Why is the risk High?", False)["intents"] == ["QUESTION"]
     assert stubs.classify_intent("Why?", True)["intents"] == ["NEW_INFO"]

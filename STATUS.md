@@ -49,6 +49,7 @@ Status values: not started · in progress · in review (PR open) · done · bloc
 3. Who presents at Playback 2, and who owns the demo script?
 
 ## Recent sessions (newest first, keep 10)
+- 2026-11-22 · Matteo · integration: merged PR #6 (A2 + risk) and #7 (fixture + scenarios); `ACME_STUB_AGENTS` per-agent stub switch; A1 needs contract fixes (PR pending) → `sessions/2026-11-22_matteo_integration.md`
 - 2026-11-22 · Alibek · A4 fixture contract fixes: case_id, outlook.reasons, ACT-001 owner → `sessions/2026-11-22_Alibek_a4-critic-outlook.md`
 - 2026-11-21 · Alibek · A4 QA lead: fixture state_v1_S1.json + all S1–S3 scenario files → `sessions/2026-11-21_Alibek_a4-critic-outlook-and-scenarios.md`
 - 2026-11-22 · Junda · A2 pre-merge director review: verified 3 fixes (no _STUB_MODE, F4 names justification, Legal/regulatory), 140 tests pass, PR open → `sessions/2026-11-22_junda_a2-pre-merge-review.md`
@@ -58,4 +59,3 @@ Status values: not started · in progress · in review (PR open) · done · bloc
 - 2026-11-21 · Matteo · director review of PR #2 (A5): 10 items decided, D-013 contract additions; PR #2 needs interface fix → `sessions/2026-11-21_matteo_a5-review.md`
 - 2026-11-21 · Matteo · P0 foundations: contracts, KB extraction, llm.py (live-tested), pipeline + stubs, hybrid models (D-009…D-012) → `sessions/2026-11-21_matteo_p0-foundations.md`
 - 2026-11-21 · Junda · A2 impact & risk: risk.py, a2_impact.py, prompts, contracts stub, 52 tests → `sessions/2026-11-21_junda_a2-impact-risk.md`
-- 2026-11-21 · Matteo · director setup: plan review, architecture, all specs → `sessions/2026-11-21_lead_director-setup.md`
