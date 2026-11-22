@@ -1,6 +1,6 @@
 # STATUS — current state of the project
 
-_Last updated: 2026-11-21 18:05 · by: Matteo (p0-foundations session)_
+_Last updated: 2026-11-22 01:18 · by: Alibek (a4-fixture-fixes session)_
 
 **Next deadline:** Playback 2 · **Tue 24 Nov 2026** · demo target: scenario S1 turn 1 → Report v1 PDF
 **Final:** Wed 2 Dec 2026
@@ -17,8 +17,8 @@ _Last updated: 2026-11-21 18:05 · by: Matteo (p0-foundations session)_
 | A2a/b/c Impact assessors + `risk.py` | A2 | **Junda** | in review (PR open) | All 3 director fixes applied ✅ · no _STUB_MODE ✅ · F4 names justification ✅ · Legal/regulatory label ✅ · 140 tests passing; needs end-to-end test once A1 (Giacomo) lands |
 | A5 Report Writer (template + PDF) | A5 | **Serdar** | not started | HTML template + PDF from a fixture state (needed for Playback 2) |
 | A3 Action Planner | A3 | **Serdar** | not started | After Playback 2 (25–28 Nov) |
-| A4 Critic & Outlook | A4 | **Alibek** | not started | After Playback 2 (25–28 Nov) |
-| Test scenarios S1–S3 + fixture states (QA lead) | A4 | **Alibek** | not started | **Write S1 + a v1 fixture state now**, needed by Serdar, Giacomo and the demo |
+| A4 Critic & Outlook | A4 | **Alibek** | in progress | Blocked on foundations; starts 25 Nov |
+| Test scenarios S1–S3 + fixture states (QA lead) | A4 | **Alibek** | done | fixture + all S1–S3 scenarios written and audited → PR on branch alibek/a4-critic-outlook-and-scenarios |
 
 _Assignment proposed by the director on 2026-11-21. Swap freely, but update this table._
 Status values: not started · in progress · in review (PR open) · done · blocked
@@ -49,6 +49,8 @@ Status values: not started · in progress · in review (PR open) · done · bloc
 3. Who presents at Playback 2, and who owns the demo script?
 
 ## Recent sessions (newest first, keep 10)
+- 2026-11-22 · Alibek · A4 fixture contract fixes: case_id, outlook.reasons, ACT-001 owner → `sessions/2026-11-22_Alibek_a4-critic-outlook.md`
+- 2026-11-21 · Alibek · A4 QA lead: fixture state_v1_S1.json + all S1–S3 scenario files → `sessions/2026-11-21_Alibek_a4-critic-outlook-and-scenarios.md`
 - 2026-11-22 · Junda · A2 pre-merge director review: verified 3 fixes (no _STUB_MODE, F4 names justification, Legal/regulatory), 140 tests pass, PR open → `sessions/2026-11-22_junda_a2-pre-merge-review.md`
 - 2026-11-22 · Junda · A2 LLM wiring & contract migration: merged P0 foundations, migrated schema, wired call_structured, 120 tests → `sessions/2026-11-22_junda_a2-llm-wiring.md`
 - 2026-11-21 · Matteo · Streamlit chat UI (`app.py`): cases, versions + PDF downloads, risk badge, attachments, live agent progress; localhost-only config → `sessions/2026-11-21_matteo_app-ui.md`
