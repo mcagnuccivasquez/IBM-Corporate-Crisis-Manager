@@ -3,7 +3,7 @@ renderer (safety net on other agents' texts, warnings only).
 
 Two kinds of check (agreed with Serdar, 2026-11-21):
 - HARD (reliable): invented numbers (digits or words), IDs that the case data never
-  mentions, banned phrases from ACME's own files (KB-03, KB-09, KB-10), personal data
+  mentions, banned phrases from ACME's own files (KB-03, KB-04, KB-09, KB-10), personal data
   (emails, @handles, phones, "R. Dubois" / "Mr X" style names). On the A5 narrative they
   trigger the one retry in llm.call_structured; what is left becomes a warning.
 - SOFT (heuristics, may misfire): "confirmed" said about a non-confirmed claim, a risk
@@ -187,10 +187,22 @@ BANNED_PHRASES = [
     ("remote fix for PCX-100",
      r"\b(?:remote|over[- ]the[- ]air|OTA|software|firmware)\s+(?:fix|update|patch|repair)\b",
      "KB-03", r"PCX|PowerCharge|charger"),
-    ("password change proves no recording was viewed",
-     r"\bpassword\s+(?:change|reset)\s+(?:proves|shows|confirms|ensures|guarantees|means)\b"
+    ("password change / recovery proves no recording was viewed",
+     r"\b(?:password\s+(?:change|reset)|(?:account\s+)?recovery)\s+(?:proves|shows|confirms|ensures|guarantees|means)\b"
      r"|\bno\s+(?:earlier\s+)?recordings?\s+(?:was|were|has\s+been|have\s+been)\s+(?:viewed|accessed|seen)\b",
-     "KB-09", None),
+     "KB-09, KB-04", None),
+    # Session 3 (KB-04: "Do not ask customers to send passwords or camera recordings")
+    ("asking customers for passwords or recordings",
+     r"\b(?:ask(?:s|ed|ing)?|request(?:s|ed|ing)?|tell(?:s|ing)?|told|invit(?:e|es|ed|ing))\s+(?:the\s+)?(?:customers?|users?|owners?|them)\s+"
+     r"(?:to\s+(?:send|share|provide|post|give)\s+|for\s+)(?:us\s+)?(?:their\s+|the\s+|your\s+)?"
+     r"(?:passwords?|credentials|login\s+details|(?:camera\s+)?recordings?|footage|videos?)\b",
+     "KB-04", None),
+    # Session 3 (KB-04 "avoid overpromising"; scenario S2: not before the logs are reviewed)
+    ("data is safe / no breach occurred",
+     r"\b(?:your|customers?'?|the|their|all)\s+(?:personal\s+)?data\s+(?:is|are|was|were|remains?|stays?)\s+(?:safe|secure|protected)\b"
+     r"|\bno\s+(?:data\s+|security\s+)?breach\s+(?:has\s+|had\s+)?(?:occurred|happened|taken\s+place|took\s+place)\b"
+     r"|\bno\s+(?:personal\s+|customer\s+)?(?:data|recordings?)\s+(?:was|were|has\s+been|have\s+been)\s+(?:accessed|exposed|compromised|leaked)\b",
+     "KB-04, scenario S2", None),
 ]
 
 
@@ -221,7 +233,12 @@ _EMAIL = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
 _HANDLE = re.compile(r"(?<![\w.@])@[A-Za-z0-9_]{2,}")
 _PHONE = re.compile(r"\+\d[\d \-/().]{7,}\d|\b\d{3,4}[ \-/]\d{3,4}[ \-/]?\d{3,4}\b")
 _TITLE_NAME = re.compile(r"\b(?:Mr|Mrs|Ms|Miss|Dr|Prof)\.?\s+([A-Z][a-z]+(?:[- ][A-Z][a-z]+)?)")
-_INITIAL_NAME = re.compile(r"\b[A-Z]\.\s?([A-Z][a-z]{2,})\b")
+# "R. Dubois", but not "batch B. Covers" / "options A and B. Then": a single letter after
+# these words is a label, not an initial (false alarm found in session 3).
+_INITIAL_NAME = re.compile(
+    r"(?<!\bbatch )(?<!\bbatches )(?<!\boption )(?<!\boptions )(?<!\bplan )(?<!\bphase )(?<!\btype )"
+    r"(?<!\bmodel )(?<!\bclass )(?<!\bgrade )(?<!\bpart )(?<!\bunit )(?<!\band )(?<!\bor )(?<!\bvs )"
+    r"\b[A-Z]\.\s?([A-Z][a-z]{2,})\b")
 _NOT_A_SURNAME = {"The", "This", "That", "These", "Those", "Then", "There", "It", "Its", "In", "On", "At",
                   "As", "An", "And", "But", "If", "No", "Not", "We", "All", "Any", "Each", "For", "From",
                   "Risk", "Quality", "Customer", "Care", "Legal", "Security", "Finance", "Supply"}
