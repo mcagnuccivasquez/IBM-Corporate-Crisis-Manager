@@ -1,0 +1,581 @@
+{
+  "case_id": "CASE-001",
+  "version": 1,
+  "created_at": "2026-11-21T10:00:00+01:00",
+  "updated_at": "2026-11-21T10:00:00+01:00",
+  "status": "open",
+  "focus": "PCX-100 smoke report",
+  "turn_input": {
+    "intent": "NEW_INFO",
+    "user_text": "A customer posted on TownSquare that their PCX-100 started smoking while charging a laptop. Screenshot attached.",
+    "attachments": [
+      "U-01"
+    ]
+  },
+  "sources": [
+    {
+      "source_id": "U-01",
+      "title": "Screenshot of TownSquare post reporting smoke from a PCX-100",
+      "file": "cases/CASE-001/inputs/townsquare_post.png",
+      "origin": "user_upload",
+      "date": "2026-11-20",
+      "category": "incident_evidence",
+      "time_relevance": "current",
+      "duplicate_of": null,
+      "reliability_note": "Screenshot; original link and capture time not provided",
+      "added_in_version": 1
+    },
+    {
+      "source_id": "KB-02",
+      "title": "Operations contact sheet (who to contact)",
+      "file": "knowledge_base/ACME_company_files/Operations_contacts_Oct26.pdf",
+      "origin": "kb",
+      "date": "2026-10-20",
+      "category": "reference",
+      "time_relevance": "current",
+      "duplicate_of": null,
+      "reliability_note": "Operations desk copy",
+      "added_in_version": 1
+    },
+    {
+      "source_id": "KB-03",
+      "title": "PowerCharge X sales reference v4",
+      "file": "knowledge_base/ACME_company_files/Product_PCX100_v4_sales_copy.pdf",
+      "origin": "kb",
+      "date": "2026-09-08",
+      "category": "reference",
+      "time_relevance": "current",
+      "duplicate_of": null,
+      "reliability_note": "Sales reference v4 with engineering notes",
+      "added_in_version": 1
+    },
+    {
+      "source_id": "KB-05",
+      "title": "Customer Care September review",
+      "file": "knowledge_base/ACME_company_files/Sep26_customer_care_review.pdf",
+      "origin": "kb",
+      "date": "2026-10-22",
+      "category": "company_record",
+      "time_relevance": "current",
+      "duplicate_of": null,
+      "reliability_note": "Support contacts, not failures per unit sold",
+      "added_in_version": 1
+    },
+    {
+      "source_id": "KB-08",
+      "title": "TravelPlug social post follow-up emails (2025)",
+      "file": "knowledge_base/ACME_company_files/RE_TravelPlug_social_followup.pdf",
+      "origin": "kb",
+      "date": "2025-11-21",
+      "category": "historical_case",
+      "time_relevance": "historical",
+      "duplicate_of": null,
+      "reliability_note": "Different product (TravelPlug 30); response precedent only",
+      "added_in_version": 1
+    },
+    {
+      "source_id": "KB-10",
+      "title": "Communications reply notes (working copy)",
+      "file": "knowledge_base/ACME_company_files/Replies_working_notes_AK.pdf",
+      "origin": "kb",
+      "date": "2026-07-07",
+      "category": "informal_note",
+      "time_relevance": "current",
+      "duplicate_of": null,
+      "reliability_note": "Working notes, not approved policy",
+      "added_in_version": 1
+    },
+    {
+      "source_id": "KB-11",
+      "title": "VN-3 supplier visit note",
+      "file": "knowledge_base/ACME_company_files/VN3_visit_note_Jul26.pdf",
+      "origin": "kb",
+      "date": "2026-07-21",
+      "category": "company_record",
+      "time_relevance": "current",
+      "duplicate_of": null,
+      "reliability_note": "Sample of 30 July units; September batches not covered",
+      "added_in_version": 1
+    },
+    {
+      "source_id": "KB-12",
+      "title": "Finance email: costs for PowerCharge returns",
+      "file": "knowledge_base/ACME_company_files/RE_costs_for_PowerCharge_returns.pdf",
+      "origin": "kb",
+      "date": "2026-09-30",
+      "category": "planning_assumption",
+      "time_relevance": "current",
+      "duplicate_of": null,
+      "reliability_note": "Planning assumption, not approved spend",
+      "added_in_version": 1
+    },
+    {
+      "source_id": "KB-13",
+      "title": "PCX-100 stock export",
+      "file": "knowledge_base/ACME_company_files/PCX_stock_export_22Oct.csv",
+      "origin": "kb",
+      "date": "2026-10-22",
+      "category": "company_record",
+      "time_relevance": "current",
+      "duplicate_of": null,
+      "reliability_note": "Delivered to channels is not the same as sold",
+      "added_in_version": 1
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "C-001",
+      "text": "A PCX-100 unit emitted smoke while charging a laptop",
+      "status": "unconfirmed",
+      "evidence_strength": "weak",
+      "source_ids": [
+        "U-01"
+      ],
+      "contradicted_by": [],
+      "domains": [
+        "reputational",
+        "legal_regulatory"
+      ],
+      "product": "PCX-100",
+      "batch": null,
+      "market": null,
+      "first_seen_version": 1,
+      "last_changed_version": 1,
+      "change_history": [
+        {
+          "version": 1,
+          "from": null,
+          "to": "unconfirmed",
+          "reason": "Single screenshot of a social post; no original link, serial number or physical sample",
+          "source_ids": [
+            "U-01"
+          ]
+        }
+      ]
+    },
+    {
+      "claim_id": "C-002",
+      "text": "By 22 Oct 2026, 11,000 PCX-100 units from batches PCX-2609-A and PCX-2609-B had been delivered to channels in DE, IT and FR, and 5,000 were in the Frankfurt warehouse",
+      "status": "confirmed",
+      "evidence_strength": "strong",
+      "source_ids": [
+        "KB-13"
+      ],
+      "contradicted_by": [],
+      "domains": [
+        "economic"
+      ],
+      "product": "PCX-100",
+      "batch": "PCX-2609-A, PCX-2609-B",
+      "market": "DE, IT, FR",
+      "first_seen_version": 1,
+      "last_changed_version": 1,
+      "change_history": [
+        {
+          "version": 1,
+          "from": null,
+          "to": "confirmed",
+          "reason": "ACME warehouse export",
+          "source_ids": [
+            "KB-13"
+          ]
+        }
+      ]
+    },
+    {
+      "claim_id": "C-003",
+      "text": "In September 2026, 18 of 420 PowerCharge X support tickets were about perceived heat; 16 were closed without reproducing a defect and 2 were awaiting samples on 22 Oct",
+      "status": "confirmed",
+      "evidence_strength": "strong",
+      "source_ids": [
+        "KB-05"
+      ],
+      "contradicted_by": [],
+      "domains": [
+        "reputational",
+        "legal_regulatory"
+      ],
+      "product": "PCX-100",
+      "batch": null,
+      "market": null,
+      "first_seen_version": 1,
+      "last_changed_version": 1,
+      "change_history": [
+        {
+          "version": 1,
+          "from": null,
+          "to": "confirmed",
+          "reason": "Customer Care review record",
+          "source_ids": [
+            "KB-05"
+          ]
+        }
+      ]
+    },
+    {
+      "claim_id": "C-004",
+      "text": "The July 2026 VN-3 visit shows the September batches are fine",
+      "status": "misleading",
+      "evidence_strength": "weak",
+      "source_ids": [
+        "KB-11"
+      ],
+      "contradicted_by": [
+        "KB-11"
+      ],
+      "domains": [
+        "legal_regulatory"
+      ],
+      "product": "PCX-100",
+      "batch": "PCX-2609-A, PCX-2609-B",
+      "market": null,
+      "first_seen_version": 1,
+      "last_changed_version": 1,
+      "change_history": [
+        {
+          "version": 1,
+          "from": null,
+          "to": "misleading",
+          "reason": "VN-3 sampled 30 July units only; September batches were not produced at the time and were not part of the sample",
+          "source_ids": [
+            "KB-11"
+          ]
+        }
+      ]
+    }
+  ],
+  "impacts": {
+    "reputational": {
+      "severity": 3,
+      "likelihood": 2,
+      "score": 6,
+      "severity_reason": "Safety question on a product line in market, publicly posted",
+      "likelihood_reason": "Single unverified report; reach not yet known",
+      "impacts": [
+        {
+          "description": "Public post links ACME charger to smoke",
+          "if_unaddressed": "Post may spread without an ACME response",
+          "timeframe": "24h",
+          "stakeholders": [
+            "Customers in DE/IT/FR",
+            "Social media audience"
+          ],
+          "source_ids": [
+            "U-01"
+          ],
+          "basis": "incident_evidence"
+        }
+      ],
+      "floor_triggers": [
+        "F1"
+      ],
+      "evidence_confidence": "low"
+    },
+    "economic": {
+      "severity": 2,
+      "likelihood": 2,
+      "score": 4,
+      "severity_reason": "A warehouse hold costs EUR 5,000 per batch in setup; replacement scope not known",
+      "likelihood_reason": "No defect confirmed; single report",
+      "impacts": [
+        {
+          "description": "Possible warehouse hold on up to 5,000 units in Frankfurt",
+          "if_unaddressed": "Suspect units may continue to ship before Quality has a sample",
+          "timeframe": "7d",
+          "stakeholders": [
+            "Retailers"
+          ],
+          "source_ids": [
+            "KB-12",
+            "KB-13"
+          ],
+          "basis": "company_data"
+        }
+      ],
+      "floor_triggers": [],
+      "evidence_confidence": "medium"
+    },
+    "legal_regulatory": {
+      "severity": 3,
+      "likelihood": 2,
+      "score": 6,
+      "severity_reason": "Possible product-safety issue on a product in market; regulatory notification possible if confirmed",
+      "likelihood_reason": "Single unverified report; no authority contact",
+      "impacts": [
+        {
+          "description": "Product-safety duties may apply if a hazard is confirmed",
+          "if_unaddressed": "ACME may react late to a notification duty",
+          "timeframe": "7d",
+          "stakeholders": [
+            "Product safety authorities"
+          ],
+          "source_ids": [
+            "U-01"
+          ],
+          "basis": "general_knowledge"
+        }
+      ],
+      "floor_triggers": [
+        "F1"
+      ],
+      "evidence_confidence": "low"
+    }
+  },
+  "risk": {
+    "level": "High",
+    "previous_level": null,
+    "max_domain_score": 6,
+    "floors_applied": [
+      "F1"
+    ],
+    "reasons": [
+      "Reputational 3x2=6 -> Medium",
+      "Legal/regulatory 3x2=6 -> Medium",
+      "Economic 2x2=4 -> Medium",
+      "F1: unconfirmed smoke report on a product in market -> floor High"
+    ],
+    "evidence_confidence": "low"
+  },
+  "stakeholders": [
+    {
+      "name": "Customers in DE/IT/FR",
+      "type": "external",
+      "interest": "Safe use of their charger",
+      "impact": "Possible safety concern",
+      "acme_contact": "Tom Weber (Customer Care)"
+    },
+    {
+      "name": "Retailers",
+      "type": "external",
+      "interest": "Clear guidance on stock",
+      "impact": "Possible hold on deliveries",
+      "acme_contact": "Luca Ferri (Supply Chain)"
+    },
+    {
+      "name": "Product safety authorities",
+      "type": "external",
+      "interest": "Notification if a hazard is confirmed",
+      "impact": "None yet",
+      "acme_contact": "Sophie Laurent (Legal / DPO)"
+    }
+  ],
+  "actions": [
+    {
+      "action_id": "ACT-004",
+      "title": "Start the shared incident playbook",
+      "what_it_does": "Gives ACME one agreed process and one incident record for future cases",
+      "owner": "Elena Rossi (COO)",
+      "approver": null,
+      "timing": "after the incident",
+      "priority": "P3",
+      "domains": [
+        "reputational",
+        "economic",
+        "legal_regulatory"
+      ],
+      "status": "proposed",
+      "focus_related": false,
+      "options_considered": [],
+      "basis_source_ids": [
+        "KB-02"
+      ],
+      "expected_effect": "Faster coordination in future incidents",
+      "result_evidence_source_ids": [],
+      "status_history": [
+        {
+          "version": 1,
+          "from": null,
+          "to": "proposed",
+          "reason": "No playbook exists (KB-02)"
+        }
+      ]
+    },
+    {
+      "action_id": "ACT-001",
+      "title": "Refer the smoke report to Customer Care and Quality and request the physical sample",
+      "what_it_does": "Gets model, serial, place of purchase and a label photo, and the unit itself, so Quality can test it",
+      "owner": "Tom Weber (Customer Care)",
+      "approver": null,
+      "timing": "within 24h",
+      "priority": "P1",
+      "domains": [
+        "reputational",
+        "legal_regulatory"
+      ],
+      "status": "proposed",
+      "focus_related": true,
+      "options_considered": [],
+      "basis_source_ids": [
+        "KB-03"
+      ],
+      "expected_effect": "Physical evidence to confirm or disprove C-001",
+      "result_evidence_source_ids": [],
+      "status_history": [
+        {
+          "version": 1,
+          "from": null,
+          "to": "proposed",
+          "reason": "KB-03: smoke reports go to Customer Care and Quality"
+        }
+      ]
+    },
+    {
+      "action_id": "ACT-002",
+      "title": "Warehouse hold on PCX-2609-A and PCX-2609-B in Frankfurt",
+      "what_it_does": "Stops new shipments of the September batches while Quality tests a sample",
+      "owner": "Luca Ferri (Supply Chain)",
+      "approver": "Elena Rossi (COO)",
+      "timing": "within 24h",
+      "priority": "P1",
+      "domains": [
+        "economic",
+        "legal_regulatory"
+      ],
+      "status": "proposed",
+      "focus_related": true,
+      "options_considered": [
+        {
+          "option": "Hold both batches (5,000 units in warehouse)",
+          "pros": "No further suspect units shipped",
+          "cons": "EUR 10,000 setup (EUR 5,000 per batch); delayed sales",
+          "chosen": true
+        },
+        {
+          "option": "No hold until the sample is tested",
+          "pros": "No cost",
+          "cons": "Units keep shipping while a safety question is open",
+          "chosen": false
+        }
+      ],
+      "basis_source_ids": [
+        "KB-12",
+        "KB-13"
+      ],
+      "expected_effect": "Limits exposure while the report is investigated",
+      "result_evidence_source_ids": [],
+      "status_history": [
+        {
+          "version": 1,
+          "from": null,
+          "to": "proposed",
+          "reason": "F1 safety floor; batch quantities from KB-13"
+        }
+      ]
+    },
+    {
+      "action_id": "ACT-003",
+      "title": "Draft a short public acknowledgement and follow up privately",
+      "what_it_does": "DRAFT - requires approval by Anna Keller and Maya Chen: acknowledges the post, invites the customer to contact Customer Care, makes no claim about tests or authorities",
+      "owner": "Anna Keller (Communications)",
+      "approver": "Elena Rossi (COO)",
+      "timing": "within 24h",
+      "priority": "P1",
+      "domains": [
+        "reputational"
+      ],
+      "status": "proposed",
+      "focus_related": true,
+      "options_considered": [
+        {
+          "option": "Short public acknowledgement + private follow-up",
+          "pros": "Matches the 2025 precedent",
+          "cons": "Post stays visible",
+          "chosen": true
+        },
+        {
+          "option": "No public reply",
+          "pros": "Avoids drawing attention",
+          "cons": "Looks unresponsive if the post spreads",
+          "chosen": false
+        }
+      ],
+      "basis_source_ids": [
+        "KB-08",
+        "KB-10"
+      ],
+      "expected_effect": "Customer reached privately; public sees ACME responding",
+      "result_evidence_source_ids": [],
+      "status_history": [
+        {
+          "version": 1,
+          "from": null,
+          "to": "proposed",
+          "reason": "Response precedent KB-08; wording rules KB-10"
+        }
+      ]
+    }
+  ],
+  "outlook": {
+    "residual_risk_if_p1_effective": "High",
+    "reasons": [
+      "F1 floor stays until the sample test confirms or disproves C-001"
+    ],
+    "assumptions": [
+      "The customer sends the unit to Quality"
+    ],
+    "cannot_estimate": [
+      "Failure rate in the field: ticket counts are not failures per unit sold (KB-05)"
+    ],
+    "pattern_warnings": [
+      "The 2025 TravelPlug case (KB-08) is a different product and only a response precedent"
+    ]
+  },
+  "qa": {
+    "verdict": "PASS",
+    "issues": [
+      {
+        "target": "A2",
+        "item_id": "economic",
+        "problem": "Units delivered vs sold not distinguished in the cost scope",
+        "fix_hint": "Show a range; delivered is not sold (KB-12)",
+        "blocking": false,
+        "resolved": false
+      }
+    ]
+  },
+  "open_questions": [
+    {
+      "question": "What is the serial number and batch of the unit in U-01?",
+      "owner": "Tom Weber",
+      "raised_in_version": 1,
+      "closed_in_version": null
+    },
+    {
+      "question": "What is the original link and capture time of the post?",
+      "owner": "Anna Keller",
+      "raised_in_version": 1,
+      "closed_in_version": null
+    }
+  ],
+  "changelog": [
+    {
+      "version": 1,
+      "risk_from": null,
+      "risk_to": "High",
+      "new_source_ids": [
+        "U-01"
+      ],
+      "claim_changes": [
+        "C-001 new (unconfirmed)",
+        "C-002 new (confirmed)",
+        "C-003 new (confirmed)",
+        "C-004 new (misleading)"
+      ],
+      "action_changes": [
+        "ACT-001 proposed",
+        "ACT-002 proposed",
+        "ACT-003 proposed",
+        "ACT-004 proposed"
+      ],
+      "summary": ""
+    }
+  ],
+  "closure": null,
+  "report": {
+    "pdf_path": null,
+    "narrative": {
+      "executive_summary": "An unconfirmed social post reports smoke from a PCX-100 charger [C-001, U-01]. Risk is High because of the safety floor F1, with low evidence confidence. Priority actions: obtain the unit for Quality [ACT-001], hold the September batches [ACT-002] and acknowledge the post [ACT-003].",
+      "situation": "A TownSquare post shows a PCX-100 that reportedly emitted smoke while charging a laptop [C-001, U-01]. The report is unconfirmed: there is no link, serial number or sample yet. 11,000 units from batches PCX-2609-A/B are in channels and 5,000 are in the Frankfurt warehouse [C-002, KB-13]. The July VN-3 visit did not cover September batches [C-004, KB-11]."
+    }
+  }
+}

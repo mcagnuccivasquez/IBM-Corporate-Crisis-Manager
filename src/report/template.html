@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ACME Crisis Management Report · {{ s.case_id }} · v{{ version }}</title>
+<style>{{ css | safe }}</style>
+</head>
+<body>
+{% set NR = "None reported" %}
+
+{# A list of source IDs, each shown with its title from the source register. #}
+{% macro refs(ids) %}
+{% for i in ids or [] %}<div class="refline">{{ i | linkify }}{% if sources_by_id[i] %} <span class="ref-title">{{ sources_by_id[i].title }}</span>{% endif %}</div>{% else %}<span class="muted">None reported</span>{% endfor %}
+{% endmacro %}
+
+{# ============================== 0. HEADER ============================== #}
+<header class="band">
+  <div class="band-left">
+    <div class="brand">ACME · Crisis Management Report</div>
+    <h1>{{ s.case_id }} · Version {{ version }}</h1>
+    <div class="meta">
+      {{ generated_at }} · Status: <strong>{{ s.status }}</strong> · Focus: {{ s.focus or "none set" }}
+    </div>
+  </div>
+  <div class="band-right">
+    <div class="risk-badge risk-{{ risk_css(s.risk.level) }}">
+      <span class="risk-label">Risk level</span>
+      <span class="risk-value"><span class="risk-prev">{{ s.risk.previous_level or "—" }}</span> → {{ (s.risk.level or NR) | upper }}</span>
+    </div>
+    <div class="conf-badge">Evidence confidence: <strong>{{ (s.risk.evidence_confidence or NR) | capitalize }}</strong></div>
+  </div>
+</header>
+
+<div class="exec-box">
+  <div class="box-title">Executive summary</div>
+  <p>{{ (narrative.executive_summary or NR) | linkify }}</p>
+</div>
+
+<div class="glance">
+  <div class="glance-box">
+    <div class="box-title">Priority actions (P1) · recommended</div>
+    {% if p1_actions %}
+    <ul class="plain">
+    {% for a in p1_actions %}
+      <li><strong>{{ a.title }}</strong> {{ a.action_id | linkify }}<br>
+        <span class="muted">{{ a.owner or NR }} · {{ a.timing or NR }}</span>
+        <span class="chip chip-{{ a.status }}">{{ status_label(a.status) }}</span></li>
+    {% endfor %}
+    </ul>
+    {% else %}<p class="muted">{{ NR }}</p>{% endif %}
+  </div>
+  <div class="glance-box">
+    <div class="box-title">Evidence status</div>
+    <table class="mini">
+      <tr><td><span class="tag tag-confirmed">Confirmed</span></td><td>{{ claim_groups.confirmed | length }}</td></tr>
+      <tr><td><span class="tag tag-unconfirmed">Unconfirmed</span></td><td>{{ claim_groups.unconfirmed | length }}</td></tr>
+      <tr><td><span class="tag tag-disproved">Disproved / misleading</span></td><td>{{ claim_groups.disproved_or_misleading | length }}</td></tr>
+    </table>
+    <div class="box-title spaced">Open questions</div>
+    {% if open_questions %}
+    <ul class="plain">{% for q in open_questions %}<li>{{ q.question | linkify }} <span class="muted">· {{ q.owner or NR }}</span></li>{% endfor %}</ul>
+    {% else %}<p class="muted">{{ NR }}</p>{% endif %}
+  </div>
+</div>
+
+<div class="legend">
+  <strong>How to read this report.</strong>
+  Every statement points to its evidence with a reference code; click a code to jump to it.
+  <span class="ref">C-…</span> a claim about the case, with its status ·
+  <span class="ref">U-…</span> evidence supplied by the user ·
+  <span class="ref">KB-…</span> an ACME company file ·
+  <span class="ref">ACT-…</span> a recommended action ·
+  <strong>F1–F4</strong> safety floors of the risk method (Appendix B) ·
+  <strong>P1</strong> now, <strong>P2</strong> this week, <strong>P3</strong> later.
+  The risk level (how serious) and the evidence confidence (how sure we are) are rated separately.
+</div>
+
+{# ============================== 1. SITUATION ============================== #}
+<section>
+  <h2>1. Situation</h2>
+  <p>{{ (narrative.situation or NR) | linkify }}</p>
+</section>
+
+{# ============================== 2. EVIDENCE ============================== #}
+<section>
+  <h2>2. Evidence</h2>
+  {% for key, title, tag, explain in [
+      ("confirmed", "Confirmed", "confirmed", "Verified by an ACME record or test, or by two independent reliable sources."),
+      ("unconfirmed", "Unconfirmed", "unconfirmed", "Reported but not yet verified. A screenshot alone does not prove a post is true."),
+      ("disproved_or_misleading", "Disproved or misleading", "disproved", "Contradicted by stronger evidence, or real but presented out of context.")] %}
+  <h3><span class="tag tag-{{ tag }}">{{ title }}</span> <span class="h3-note">{{ explain }}</span></h3>
+  {% set rows = claim_groups[key] %}
+  {% if rows %}
+  <table>
+    <thead><tr><th>Claim</th><th class="w-sm">Strength</th><th class="w-lg">Sources</th><th class="w-md">History</th></tr></thead>
+    <tbody>
+    {% for c in rows %}
+      <tr id="ref-{{ c.claim_id }}">
+        <td><span class="id">{{ c.claim_id }}</span> {{ c.text | linkify }}
+          {% if key == "disproved_or_misleading" %}<div class="sub"><strong>{{ c.status | capitalize }}</strong>{% if c.contradicted_by %} · contradicted by {{ c.contradicted_by | join(", ") | linkify }}{% endif %}</div>{% endif %}
+        </td>
+        <td>{{ (c.evidence_strength or NR) | capitalize }}</td>
+        <td>{{ refs(c.source_ids) }}</td>
+        <td>{{ change_label(c, version) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">{{ NR }}</p>
+  {% endif %}
+  {% endfor %}
+  <p class="note">Evidence strength rates our sources, not the risk. Full claim history: Appendix C.</p>
+</section>
+
+{# ============================== 3. RISK ============================== #}
+<section>
+  <h2>3. Risk and reasons</h2>
+  <p>Overall risk: <span class="risk-inline risk-{{ risk_css(s.risk.level) }}">{{ s.risk.level or NR }}</span>
+     (previous version: {{ s.risk.previous_level or "—" }}).
+     Evidence confidence, rated separately: <strong>{{ (s.risk.evidence_confidence or NR) | capitalize }}</strong>.</p>
+  <table class="keep">
+    <thead><tr><th class="w-md">Domain</th><th class="w-xs">Severity</th><th class="w-xs">Likelihood</th><th class="w-xs">Score</th><th>Why</th><th class="w-xs">Floors</th></tr></thead>
+    <tbody>
+    {% for key, label in domains %}
+      {% set d = s.impacts[key] %}
+      <tr>
+        <td>{{ label }}</td>
+        <td class="num">{{ d.severity or NR }}</td>
+        <td class="num">{{ d.likelihood or NR }}</td>
+        <td class="num"><strong>{{ d.score or NR }}</strong></td>
+        <td><span class="muted">Severity:</span> {{ (d.severity_reason or NR) | linkify }}<br><span class="muted">Likelihood:</span> {{ (d.likelihood_reason or NR) | linkify }}</td>
+        <td>{{ (d.floor_triggers or []) | join(", ") or "—" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <h3>How the overall level was set</h3>
+  <ul>{% for r in s.risk.reasons or [] %}<li>{{ r | linkify }}</li>{% else %}<li>{{ NR }}</li>{% endfor %}</ul>
+  <p class="note">Severity and likelihood are each scored 1–4; score = severity × likelihood. Method and floors: Appendix B.</p>
+</section>
+
+{# ============================== 4. IMPACTS ============================== #}
+<section>
+  <h2>4. Impacts</h2>
+  <table>
+    <thead><tr><th class="w-md">Domain</th><th>Impact</th><th>If left unaddressed</th><th class="w-sm">Timeframe</th><th class="w-md">Affected</th><th class="w-md">Based on</th></tr></thead>
+    <tbody>
+    {% for key, label in domains %}
+      {% set items = s.impacts[key].impacts or [] %}
+      {% for i in items %}
+      <tr>
+        <td>{% if loop.first %}<strong>{{ label }}</strong>{% endif %}</td>
+        <td>{{ i.description | linkify }}</td>
+        <td>{{ (i.if_unaddressed or NR) | linkify }}</td>
+        <td>{{ timeframe_label(i.timeframe) }}</td>
+        <td>{{ (i.stakeholders or []) | join(", ") or NR }}</td>
+        <td>{{ refs(i.source_ids) }}<div class="sub">{{ basis_label(i.basis) }}</div></td>
+      </tr>
+      {% else %}
+      <tr><td><strong>{{ label }}</strong></td><td colspan="5" class="empty">{{ NR }}</td></tr>
+      {% endfor %}
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+{# ============================== 5. STAKEHOLDERS ============================== #}
+<section>
+  <h2>5. Stakeholders</h2>
+  {% if s.stakeholders %}
+  <table>
+    <thead><tr><th class="w-lg">Stakeholder</th><th class="w-sm">Type</th><th>Interest</th><th>Impact on them</th><th class="w-lg">ACME contact</th></tr></thead>
+    <tbody>
+    {% for st in s.stakeholders %}
+      <tr><td>{{ st.name }}</td><td>{{ st.type or NR }}</td><td>{{ (st.interest or NR) | linkify }}</td><td>{{ (st.impact or NR) | linkify }}</td><td>{{ st.acme_contact or NR }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">{{ NR }}</p>
+  {% endif %}
+</section>
+
+{# ============================== 6. ACTION PLAN ============================== #}
+<section>
+  <h2>6. Action plan</h2>
+  <p class="note">Recommendations drafted by the system. Status shows what the user has reported; nothing is executed by the system.</p>
+  {% if actions_sorted %}
+  <table class="actions">
+    <thead><tr><th>Action</th><th class="w-md">Owner · approver</th><th class="w-sm">When</th><th class="w-sm">Status</th><th class="w-md">Based on</th></tr></thead>
+    <tbody>
+    {% for a in actions_sorted %}
+      <tr id="ref-{{ a.action_id }}">
+        <td>
+          <span class="id">{{ a.action_id }}</span> <strong>{{ a.title }}</strong>
+          <div class="sub">{{ (a.what_it_does or NR) | linkify }}</div>
+          <div class="sub"><span class="muted">Expected effect:</span> {{ (a.expected_effect or NR) | linkify }}</div>
+          {% if a.result_evidence_source_ids %}<div class="sub"><span class="muted">Result evidence:</span> {{ a.result_evidence_source_ids | join(", ") | linkify }}</div>{% endif %}
+          {% if a.options_considered %}
+          <div class="options">
+            <div class="box-title">Options considered</div>
+            {% for o in a.options_considered %}
+            <div class="option {{ 'chosen' if o.chosen }}">
+              <strong>{{ "✔ Recommended:" if o.chosen else "○ Alternative:" }}</strong> {{ o.option | linkify }}
+              <span class="muted">· Pros: {{ (o.pros or NR) | linkify }} · Cons: {{ (o.cons or NR) | linkify }}</span>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </td>
+        <td>{{ a.owner or NR }}{% if a.approver %}<div class="sub">Approver: {{ a.approver }}</div>{% endif %}</td>
+        <td><span class="prio prio-{{ a.priority }}">{{ priority_label(a.priority) }}</span><div class="sub">{{ a.timing or NR }}</div></td>
+        <td><span class="chip chip-{{ a.status }}">{{ status_label(a.status) }}</span></td>
+        <td>{{ refs(a.basis_source_ids) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">{{ NR }}</p>
+  {% endif %}
+</section>
+
+{# ============================== 7. OUTLOOK ============================== #}
+<section>
+  <h2>7. Outlook if priority actions succeed</h2>
+  {% set o = s.outlook %}
+  <p>Expected remaining risk if the P1 actions work:
+    {% if o.residual_risk_if_p1_effective %}<span class="risk-inline risk-{{ risk_css(o.residual_risk_if_p1_effective) }}">{{ o.residual_risk_if_p1_effective }}</span>{% else %}{{ NR }}{% endif %}
+  </p>
+  <div class="grid2">
+  {% for title, items in [("Why", o.reasons), ("Assumptions", o.assumptions), ("Cannot be estimated", o.cannot_estimate), ("Pattern warnings", o.pattern_warnings)] %}
+    <div><h3>{{ title }}</h3>
+    <ul>{% for x in items or [] %}<li>{{ x | linkify }}</li>{% else %}<li class="muted">{{ NR }}</li>{% endfor %}</ul></div>
+  {% endfor %}
+  </div>
+</section>
+
+{# ============================== 8. CHANGES + OPEN QUESTIONS ============================== #}
+<section>
+  <h2>8. Changes since {% if is_initial %}previous version{% else %}v{{ version - 1 }}{% endif %} and open questions</h2>
+  {% if is_initial %}<p><strong>Initial assessment.</strong> There is no previous version.</p>{% endif %}
+  <p><strong>Risk:</strong> {{ s.risk.previous_level or "—" }} → {{ s.risk.level or NR }}
+    {% if not is_initial and s.risk.previous_level == s.risk.level %}(unchanged){% endif %}</p>
+  {% set ch_text = narrative.changes_summary or (changes.summary if changes else None) %}
+  {% if ch_text or not is_initial %}<p>{{ (ch_text or NR) | linkify }}</p>{% endif %}
+  {% if changes %}
+  <table class="keep">
+    <tbody>
+      <tr><th class="w-lg">New evidence</th><td>{{ refs(changes.new_source_ids) }}</td></tr>
+      <tr><th>Claim changes</th><td>{% for x in changes.claim_changes or [] %}{{ x | linkify }}<br>{% else %}{{ NR }}{% endfor %}</td></tr>
+      <tr><th>Action changes</th><td>{% for x in changes.action_changes or [] %}{{ x | linkify }}<br>{% else %}{{ NR }}{% endfor %}</td></tr>
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">No change record for this version.</p>
+  {% endif %}
+
+  <h3>Open questions</h3>
+  {% if open_questions %}
+  <table>
+    <thead><tr><th>Question</th><th class="w-md">Owner</th><th class="w-xs">Raised</th></tr></thead>
+    <tbody>
+    {% for q in open_questions %}<tr><td>{{ q.question | linkify }}</td><td>{{ q.owner or NR }}</td><td>v{{ q.raised_in_version }}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">{{ NR }}</p>
+  {% endif %}
+</section>
+
+{# ============================== 9. CLOSE-OUT ============================== #}
+{% if is_closed %}
+<section>
+  <h2>9. Case closed: remaining risk, open actions, conditions for reopening</h2>
+  {% set cl = s.closure %}
+  <p>{{ (narrative.closure_summary or NR) | linkify }}</p>
+  <p><strong>Remaining risk:</strong> {{ (cl.remaining_risk or NR) | linkify }}</p>
+  <h3>Open actions</h3>
+  <ul>
+  {% for aid in cl.open_actions or [] %}
+    <li>{{ aid | linkify }}{% if actions_by_id[aid] %}: {{ actions_by_id[aid].title }} ({{ status_label(actions_by_id[aid].status) }}){% endif %}</li>
+  {% else %}<li>{{ NR }}</li>{% endfor %}
+  </ul>
+  <h3>Conditions for reopening</h3>
+  <ul>{% for x in cl.reopen_conditions or [] %}<li>{{ x | linkify }}</li>{% else %}<li>{{ NR }}</li>{% endfor %}</ul>
+</section>
+{% endif %}
+
+{# ============================== APPENDICES ============================== #}
+<div class="appendix-divider">Appendices</div>
+
+<section>
+  <h2>Appendix A · Sources cited</h2>
+  {% if cited_sources %}
+  <table>
+    <thead><tr><th class="w-xs">ID</th><th>Source</th><th class="w-sm">Date</th><th class="w-md">Type</th><th>Reliability note</th></tr></thead>
+    <tbody>
+    {% for src in cited_sources %}
+      <tr id="ref-{{ src.source_id }}">
+        <td><span class="id">{{ src.source_id }}</span></td>
+        <td>{{ src.title }}{% if src.file %}<div class="sub">{{ src.file.split("/")[-1] }}</div>{% endif %}
+          {% if src.duplicate_of %}<div class="sub">Copy of {{ src.duplicate_of | linkify }}: not independent evidence</div>{% endif %}</td>
+        <td class="nowrap">{{ src.date or NR }}</td>
+        <td>{{ category_label(src.category) }}{% if src.time_relevance == "historical" %}<div class="sub">Historical: not evidence about this incident</div>{% endif %}</td>
+        <td>{{ src.reliability_note or NR }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">{{ NR }}</p>
+  {% endif %}
+</section>
+
+<section>
+  <h2>Appendix B · Risk method</h2>
+  <p><strong>Step 1, per domain.</strong> Each domain (reputational, economic, legal/regulatory) is scored for Severity (S) and Likelihood/Exposure (L), each from 1 to 4. Domain score = S × L.</p>
+  <table class="keep">
+    <thead><tr><th class="w-xs"></th><th>Severity (how bad if it happens / continues)</th><th>Likelihood / exposure (how probable and widespread now)</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Minor: isolated, single customer, no safety/data dimension, cost &lt; €10k</td><td>Remote: claim disproved or no plausible mechanism; no exposure</td></tr>
+      <tr><td>2</td><td>Moderate: several customers or limited public visibility; cost €10k–100k</td><td>Possible: single unverified report; limited reach</td></tr>
+      <tr><td>3</td><td>Major: safety or personal-data question on a product line in market; broad public attention; cost €100k–1M; regulatory notification possible</td><td>Likely: multiple independent reports, or a defect confirmed in samples; affected units in market; reach growing</td></tr>
+      <tr><td>4</td><td>Severe: confirmed injury/fire, confirmed access to recordings, authority action, withdrawal across markets; cost &gt; €1M</td><td>Occurring: harm, media coverage, retailer or authority action already happening</td></tr>
+    </tbody>
+  </table>
+  <p><strong>Step 2, overall level.</strong> Highest domain score: 1–3 Low · 4–6 Medium · 8–9 High · 12–16 Critical.</p>
+  <p><strong>Step 3, floors.</strong></p>
+  <ul>
+    <li><strong>F1</strong> Credible report of fire, smoke, burning, electric shock or injury involving a product on the market, even if unconfirmed → at least High.</li>
+    <li><strong>F2</strong> Confirmed injury, a hazardous defect confirmed in market units, or a request/contact from an authority → Critical.</li>
+    <li><strong>F3</strong> Confirmed or likely unauthorised access to customer personal data or recordings → at least High.</li>
+    <li><strong>F4</strong> The level may only drop versus the previous version if a claim was disproved or downgraded, or an action was verified effective.</li>
+  </ul>
+  <p>Likelihood is about the world (exposure, spread, mechanism); evidence confidence is about our sources. Both are reported and never merged. A user-set focus changes ordering and depth, never scores or the level.</p>
+</section>
+
+<section>
+  <h2>Appendix C · Quality checks and claim history</h2>
+  <h3>Checks on the written summaries</h3>
+  {% if narrative_warnings %}
+  <ul class="warn">{% for w in narrative_warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+  {% elif narrative_warnings is none %}
+  <p class="empty">Narrative checks not run.</p>
+  {% else %}
+  <p class="empty">No issues found in the narrative checks.</p>
+  {% endif %}
+
+  <h3>Checks on the case data</h3>
+  {% if data_warnings or cited_missing %}
+  <ul class="warn">
+    {% for w in data_warnings %}<li>{{ w }}</li>{% endfor %}
+    {% if cited_missing %}<li>Cited but missing from the source register: {{ cited_missing | join(", ") }}</li>{% endif %}
+  </ul>
+  {% else %}
+  <p class="empty">No issues found in the case data.</p>
+  {% endif %}
+
+  <h3>Safety net on other agents' texts</h3>
+  <p class="note">Banned phrases (KB-03, KB-09, KB-10), personal data and wording that may blame a customer, in texts written by A2–A4. Warnings only: A5 does not change these texts.</p>
+  {% if other_agent_warnings %}
+  <ul class="warn">{% for w in other_agent_warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+  {% else %}
+  <p class="empty">No issues found.</p>
+  {% endif %}
+
+  <h3>Unresolved QA notes (A4 Critic)</h3>
+  {% if unresolved_qa %}
+  <table>
+    <thead><tr><th class="w-xs">Target</th><th class="w-sm">Item</th><th>Problem</th><th>Fix hint</th><th class="w-xs">Blocking</th></tr></thead>
+    <tbody>
+    {% for i in unresolved_qa %}
+      <tr><td>{{ i.target }}</td><td>{{ (i.item_id or "—") | linkify }}</td><td>{{ i.problem | linkify }}</td><td>{{ (i.fix_hint or NR) | linkify }}</td><td>{{ "yes" if i.blocking else "no" }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">{{ NR }}</p>
+  {% endif %}
+
+  <h3>Claim history</h3>
+  {% if s.claims %}
+  <table>
+    <thead><tr><th class="w-xs">Claim</th><th class="w-xs">Version</th><th class="w-md">From → to</th><th>Reason</th><th class="w-md">Sources</th></tr></thead>
+    <tbody>
+    {% for c in s.claims %}{% for h in c.change_history or [] %}
+      <tr><td>{{ c.claim_id | linkify }}</td><td>v{{ h.version }}</td><td>{{ h["from"] or "new" }} → {{ h.to }}</td><td>{{ (h.reason or NR) | linkify }}</td><td>{{ (h.source_ids or []) | join(", ") | linkify }}</td></tr>
+    {% endfor %}{% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">{{ NR }}</p>
+  {% endif %}
+</section>
+
+</body>
+</html>
