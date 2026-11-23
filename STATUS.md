@@ -1,6 +1,6 @@
 # STATUS — current state of the project
 
-_Last updated: 2026-11-23 23:10 · by: Alibek (a4-checks-integration session)_
+_Last updated: 2026-11-23 23:35 · by: Alibek (a4-checks-integration session)_
 
 **Next deadline:** Playback 2 · **Tue 24 Nov 2026** · demo target: scenario S1 turn 1 → Report v1 PDF
 **Final:** Wed 2 Dec 2026
@@ -49,7 +49,7 @@ Status values: not started · in progress · in review (PR open) · done · bloc
 3. Who presents at Playback 2, and who owns the demo script?
 
 ## Recent sessions (newest first, keep 10)
-- 2026-11-23 · Alibek · A4 checks integration: `a4_critic.py`, `a4_critic.md` prompt, 18 tests (pre-pass + acceptance), check_other_agents first-pass + run alias for pipeline → `sessions/2026-11-23_Alibek_a4-checks-integration.md`
+- 2026-11-23 · Alibek · A4 checks integration: `a4_critic.py`, prompt, 18 tests, Appendix C pass condition in all 7 expected.md files → `sessions/2026-11-23_Alibek_a4-checks-integration.md`
 - 2026-11-23 · Matteo · reviews + D-015: merged PR #8 (A1), #2 (A5), #10 (A3); `A3Output.warnings` → non-blocking QA notes; app runs all real agents except A4; 332 tests → `sessions/2026-11-23_matteo_reviews-d015.md`
 - 2026-11-23 · Serdar · A3 Action Planner: plan → code-built records, hard/soft checks, shared banned phrases (KB-04/S2), requirements audit of A3 + A5; 5 items for Matteo → `sessions/2026-11-23_serdar_a3-actions.md`
 - 2026-11-22 · Giacomo · A1 director-review fixes: prompt renamed `a1_evidence.md`, `_build_context_block`, `check=` KB-id lambda, 33 tests pass; PR pending → `sessions/2026-11-22_giacomo_a1-evidence.md`

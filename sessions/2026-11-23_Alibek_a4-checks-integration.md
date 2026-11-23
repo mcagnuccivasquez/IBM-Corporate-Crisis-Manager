@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Who | Alibek |
-| Start → end | 22:55 → 23:15 |
+| Start → end | 22:55 → 23:35 |
 | Tool / LLM | IBM Bob |
 | Working on | A4 Critic & Outlook — integrate `check_other_agents` as first pass, build `a4_critic.py`, prompt, tests |
 | Branch | alibek/a4-critic-outlook-and-scenarios |
@@ -18,6 +18,8 @@
 - 23:05 · `py -m pytest tests/test_a4_critic.py` → 3 failures; fixed: (1) test phrases adjusted (KB-10 reliability_note contains 'all units tested' in evidence support, so it passes correctly — use 'independent tests' in tests instead); (2) verdict correction logic extended to cover LLM PASS + blocking issues contradiction; (3) run alias added for pipeline
 - 23:12 · All 18/18 tests pass; full suite: 315/316 pass (1 pre-existing Playwright Chromium failure — not our code)
 - 23:12 · Updated STATUS.md: A4 row → "in progress", session added to Recent sessions
+- 23:20 · Updated all 7 scenario expected.md files (S1 T1–T4, S2 T1–T2, S3 T1) with Appendix C safety net section: empty-list expectation, per-turn banned-phrase / personal-data / blame-wording table, trap-planted notes
+- 23:35 · Session wrap-up; commit staged
 
 ## Summary
 Implemented `src/agents/a4_critic.py` with a two-step design: (1) free pre-pass using Serdar's `check_other_agents` from `src/report/checks.py` — each hit becomes a `QAIssue` with correct target agent and blocking flag; (2) LLM review (Sonnet 5.5) with the pre-pass hits injected into the user message so the LLM can't silently miss them. Pre-pass hits are merged into the final output even if the LLM omits them, and the verdict is always corrected to REVISE if any blocking issue is present. Added `run` alias so the pipeline picks it up as a real agent.
@@ -26,6 +28,9 @@ Implemented `src/agents/a4_critic.py` with a two-step design: (1) free pre-pass 
 - `src/agents/a4_critic.py` — full implementation, `run` alias for pipeline
 - `src/prompts/a4_critic.md` — system prompt with G1-G3, T1-T12, M1-M6 checklist
 - `tests/test_a4_critic.py` — 18 tests: pre-pass unit tests + all 4 spec §8 acceptance tests
+- `tests/scenarios/S1/turn_{1,2,3,4}_expected.md` — Appendix C safety net section added
+- `tests/scenarios/S2/turn_{1,2}_expected.md` — Appendix C safety net section added
+- `tests/scenarios/S3/turn_1_expected.md` — Appendix C safety net section added
 - `STATUS.md` updated (A4 row, recent sessions)
 - `sessions/2026-11-23_Alibek_a4-checks-integration.md` created
 
@@ -42,6 +47,13 @@ Implemented `src/agents/a4_critic.py` with a two-step design: (1) free pre-pass 
 - `src/agents/a4_critic.py` (created)
 - `src/prompts/a4_critic.md` (created)
 - `tests/test_a4_critic.py` (created)
+- `tests/scenarios/S1/turn_1_expected.md` (updated)
+- `tests/scenarios/S1/turn_2_expected.md` (updated)
+- `tests/scenarios/S1/turn_3_expected.md` (updated)
+- `tests/scenarios/S1/turn_4_expected.md` (updated)
+- `tests/scenarios/S2/turn_1_expected.md` (updated)
+- `tests/scenarios/S2/turn_2_expected.md` (updated)
+- `tests/scenarios/S3/turn_1_expected.md` (updated)
 - `STATUS.md` (updated: A4 row + recent sessions)
 - `sessions/2026-11-23_Alibek_a4-checks-integration.md` (this file)
 
