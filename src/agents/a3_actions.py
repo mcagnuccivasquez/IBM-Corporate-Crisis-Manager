@@ -320,8 +320,10 @@ def plan_actions(state: CaseState, turn: TurnInput | None = None, *, client=None
 
 
 def run(state: CaseState, turn: TurnInput | None = None, *, client=None) -> A3Output:
-    """Pipeline entry point. API errors (LLMError) go up to the pipeline, like A1/A2."""
+    """Pipeline entry point. API errors (LLMError) go up to the pipeline, like A1/A2.
+    Warnings go into A3Output.warnings (D-015); A0 shows them as non-blocking QA notes."""
     out, warnings = plan_actions(state, turn, client=client)
     for w in warnings:
         log.warning("A3 %s: %s", state.case_id, w)
+    out.warnings = warnings
     return out

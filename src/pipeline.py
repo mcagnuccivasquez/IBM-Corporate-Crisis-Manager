@@ -426,8 +426,12 @@ def run_turn(
         def run_risk() -> None:
             state.risk = _as(Risk, agents.risk(snapshot(), prev))
 
+        a3_warnings: list[str] = []
+
         def run_a3() -> None:
-            merge_a3(state, _as(A3Output, agents.a3(snapshot(), turn)), merge_issues)
+            out = _as(A3Output, agents.a3(snapshot(), turn))
+            merge_a3(state, out, merge_issues)
+            a3_warnings[:] = out.warnings  # D-015: keep only the latest A3 run's warnings
 
         def run_a4() -> A4Output:
             out = _as(A4Output, agents.a4(snapshot(), turn))
@@ -453,6 +457,7 @@ def run_turn(
             elif "A3" in targets:
                 run_a3()
             step = "A4 critic (after revise)"; _step(on_step, step); a4_out = run_a4()
+        merge_issues += [QAIssue(target="A3", problem=w, blocking=False) for w in a3_warnings]  # D-015
         if merge_issues:
             state.qa = QA(verdict=state.qa.verdict, issues=state.qa.issues + merge_issues)
 
