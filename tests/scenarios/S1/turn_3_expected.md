@@ -77,3 +77,20 @@ Risk must stay **Critical**:
 `qa.verdict = "REVISE"` if:
 - Risk is lowered to High because "hold is done" → blocking, F4 violation, M6
 - Heat tickets are cited as confirming a wider fault → blocking, T4
+
+---
+
+## Appendix C safety net expectation
+
+`report.narrative_warnings = []` (empty list)
+
+**What must NOT appear in Appendix C:**
+
+| Category | Why it must not fire |
+|---|---|
+| Banned phrase "all units tested" | No action text should claim monitoring confirmed all units safe — only batch B hold is confirmed `completed` |
+| Banned phrase "authorities contacted" | Legal/DPO (Sophie Laurent) is tracking the obligation; no text should state authorities have been notified |
+| Personal data | 6 heat tickets are an aggregate count — no individual customer name, email, or handle should appear in action or impact texts |
+| Blame wording | Rising heat tickets must not be characterised as "customer misuse" or "user error" |
+
+**T11 trap planted in this turn:** None by default. The natural T4 risk (presenting heat tickets as a failure rate) is a method error caught by the LLM review; it would not appear in `what_it_does` or impact texts. If a test variation adds blame wording or personal data to monitor-action texts, A4's pre-pass catches it as a blocking issue before the PDF.

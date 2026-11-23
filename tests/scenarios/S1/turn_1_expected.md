@@ -73,3 +73,20 @@ Final level: **High** (not Critical — no confirmed injury, no authority contac
 For a clean v1 fixture state: `qa.verdict = "PASS"`, `qa.issues = []`
 
 (A4 acceptance test: "Clean S1 v1 → PASS" — from A4 spec §8)
+
+---
+
+## Appendix C safety net expectation
+
+`report.narrative_warnings = []` (empty list, not null)
+
+**What must NOT appear in Appendix C:**
+
+| Category | Why it must not fire |
+|---|---|
+| Banned phrase "all units tested" | No action or stakeholder text claims all units were tested — ACT-002 explicitly says not to claim this (KB-10) |
+| Banned phrase "authorities contacted" | No action claims authorities have been contacted — ACT-003 is a briefing to Legal, not a notification |
+| Personal data (email, @handle, phone, initial+surname) | No customer names or contact details appear in action, stakeholder, impact, or outlook texts |
+| Blame wording | No action or impact text suggests customer misuse caused the incident |
+
+**If Appendix C fires on a clean S1 v1 run**, it means A4's pre-pass missed something that `check_other_agents` can see. That is a bug in A4, not a known exception.

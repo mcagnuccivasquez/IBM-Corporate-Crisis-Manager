@@ -109,3 +109,21 @@ Final level: **Medium**
 - Risk drops without F4 justification → blocking, M6
 - `closure.reopen_conditions` is empty or vague → blocking, A4 spec §3
 - C-001 is set to `disproved` without evidence of that → blocking, G2
+
+---
+
+## Appendix C safety net expectation
+
+`report.narrative_warnings = []` (empty list)
+
+**What must NOT appear in Appendix C:**
+
+| Category | Why it must not fire |
+|---|---|
+| Banned phrase "all units tested" | Batch A was cleared by lab test, not by testing "all units"; action/impact text must not over-generalise |
+| Banned phrase "authorities contacted" | Closure summary must not state authorities were notified unless Legal/DPO confirmed a notification was filed |
+| Banned phrase "remote fix for PCX-100" | Closure narrative must not suggest any firmware or OTA remedy |
+| Personal data | No customer names, handles, or contact details in closure action, stakeholder, impact, or outlook texts |
+| Blame wording | The defect was a manufacturing issue in batch B — closure text must not shift responsibility to customers |
+
+**On CLOSE turns, `reopen_conditions` are also checked.** Each reopen condition must be concrete and observable (e.g. "any new smoke/fire report on PCX-100") — not vague ("if anything goes wrong"). Vague conditions do not trip the safety net but do trigger a T12-adjacent issue in A4's LLM review.
