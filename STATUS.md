@@ -1,5 +1,6 @@
 # STATUS — current state of the project
 
+_Last updated: 2026-11-22 17:05 · by: Giacomo (a1-evidence session)_
 _Last updated: 2026-11-22 01:18 · by: Alibek (a4-fixture-fixes session)_
 
 **Next deadline:** Playback 2 · **Tue 24 Nov 2026** · demo target: scenario S1 turn 1 → Report v1 PDF
@@ -13,6 +14,8 @@ _Last updated: 2026-11-22 01:18 · by: Alibek (a4-fixture-fixes session)_
 |---|---|---|---|---|
 | Foundations (`contracts.py`, `llm.py`, `kb.py`, KB extraction) | A0 | **Matteo** | in review (branch `matteo/p0-foundations`) | Open PR → main and merge; live API verified (cache hit, $0.03) |
 | A0 Orchestrator (`pipeline.py`, `app.py`, `diff.py`) + integration | A0 | **Matteo** | in review (branch `matteo/app-ui`) | `pipeline.py`, `diff.py`, stubs, `app.py` done (UI runs end to end on stubs: `.\.venv\Scripts\python.exe -m streamlit run src/app.py`); next: integrate teammates' agents, first live S1 run |
+| A1 Evidence Analyst | A1 | **Giacomo** | in review (branch `giacomo/a1-evidence`) | `a1_evidence.py` fixed (prompt renamed → `a1_evidence.md`, `_build_context_block`, `check=` lambda for KB IDs); 33 tests passing; PR pending |
+| A2a/b/c Impact assessors + `risk.py` | A2 | **Junda** | not started | `risk.py` + tests first (pure Python, no dependencies) |
 | A1 Evidence Analyst | A1 | **Giacomo** | not started | Prompt + output model (needed for Playback 2) |
 | A2a/b/c Impact assessors + `risk.py` | A2 | **Junda** | in review (PR open) | All 3 director fixes applied ✅ · no _STUB_MODE ✅ · F4 names justification ✅ · Legal/regulatory label ✅ · 140 tests passing; needs end-to-end test once A1 (Giacomo) lands |
 | A5 Report Writer (template + PDF) | A5 | **Serdar** | not started | HTML template + PDF from a fixture state (needed for Playback 2) |
@@ -49,6 +52,7 @@ Status values: not started · in progress · in review (PR open) · done · bloc
 3. Who presents at Playback 2, and who owns the demo script?
 
 ## Recent sessions (newest first, keep 10)
+- 2026-11-22 · Giacomo · A1 director-review fixes: prompt renamed `a1_evidence.md`, `_build_context_block`, `check=` KB-id lambda, 33 tests pass; PR pending → `sessions/2026-11-22_giacomo_a1-evidence.md`
 - 2026-11-22 · Matteo · integration: merged PR #6 (A2 + risk) and #7 (fixture + scenarios); `ACME_STUB_AGENTS` per-agent stub switch; A1 needs contract fixes (PR pending) → `sessions/2026-11-22_matteo_integration.md`
 - 2026-11-22 · Alibek · A4 fixture contract fixes: case_id, outlook.reasons, ACT-001 owner → `sessions/2026-11-22_Alibek_a4-critic-outlook.md`
 - 2026-11-21 · Alibek · A4 QA lead: fixture state_v1_S1.json + all S1–S3 scenario files → `sessions/2026-11-21_Alibek_a4-critic-outlook-and-scenarios.md`
