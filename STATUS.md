@@ -22,8 +22,8 @@ _Last updated: 2026-11-22 01:18 · by: Alibek (a4-fixture-fixes session)_
 | Test scenarios S1–S3 + fixture states (QA lead) | A4 | **Alibek** | not started | **Write S1 + a v1 fixture state now**, needed by Serdar, Giacomo and the demo |
 | A1 Evidence Analyst | A1 | **Giacomo** | not started | Prompt + output model (needed for Playback 2) |
 | A2a/b/c Impact assessors + `risk.py` | A2 | **Junda** | in review (PR open) | All 3 director fixes applied ✅ · no _STUB_MODE ✅ · F4 names justification ✅ · Legal/regulatory label ✅ · 140 tests passing; needs end-to-end test once A1 (Giacomo) lands |
-| A5 Report Writer (template + PDF) | A5 | **Serdar** | not started | HTML template + PDF from a fixture state (needed for Playback 2) |
-| A3 Action Planner | A3 | **Serdar** | not started | After Playback 2 (25–28 Nov) |
+| A5 Report Writer (template + PDF) | A5 | **Serdar** | in review (PR #2) | Matteo's 4 PR changes done (pipeline interface, `llm.py`/Haiku, `A5Output`), weaknesses fixed, fact-check + safety net, 190 tests pass. Next: Matteo merges; live API run Mon 23 Nov |
+| A3 Action Planner | A3 | **Serdar** | in review (PR open) | Built on branch `serdar/a3-actions` (from PR #2): plan → code-built records, hard/soft checks, 297 tests pass. Next: merge PR #2 first, then this PR; live run after the API key decision; prompt fixes 4–5 |
 | A4 Critic & Outlook | A4 | **Alibek** | in progress | Blocked on foundations; starts 25 Nov |
 | Test scenarios S1–S3 + fixture states (QA lead) | A4 | **Alibek** | done | fixture + all S1–S3 scenarios written and audited → PR on branch alibek/a4-critic-outlook-and-scenarios |
 
@@ -56,6 +56,7 @@ Status values: not started · in progress · in review (PR open) · done · bloc
 3. Who presents at Playback 2, and who owns the demo script?
 
 ## Recent sessions (newest first, keep 10)
+- 2026-11-23 · Serdar · A3 Action Planner: plan → code-built records, hard/soft checks, shared banned phrases (KB-04/S2), requirements audit of A3 + A5; 5 items for Matteo → `sessions/2026-11-23_serdar_a3-actions.md`
 - 2026-11-21 · Serdar · A5 session 2: PR #2 fitted to the pipeline (Matteo's 4 changes), weaknesses fixed, AI fact-check + safety net, event-loop fix, A5 spec updated; 6 items for Matteo → `sessions/2026-11-21_serdar_a5-pipeline-and-fixes.md`
 - 2026-11-22 · Giacomo · A1 director-review fixes: prompt renamed `a1_evidence.md`, `_build_context_block`, `check=` KB-id lambda, 33 tests pass; PR pending → `sessions/2026-11-22_giacomo_a1-evidence.md`
 - 2026-11-22 · Matteo · integration: merged PR #6 (A2 + risk) and #7 (fixture + scenarios); `ACME_STUB_AGENTS` per-agent stub switch; A1 needs contract fixes (PR pending) → `sessions/2026-11-22_matteo_integration.md`
@@ -63,6 +64,7 @@ Status values: not started · in progress · in review (PR open) · done · bloc
 - 2026-11-21 · Alibek · A4 QA lead: fixture state_v1_S1.json + all S1–S3 scenario files → `sessions/2026-11-21_Alibek_a4-critic-outlook-and-scenarios.md`
 - 2026-11-22 · Junda · A2 pre-merge director review: verified 3 fixes (no _STUB_MODE, F4 names justification, Legal/regulatory), 140 tests pass, PR open → `sessions/2026-11-22_junda_a2-pre-merge-review.md`
 - 2026-11-22 · Junda · A2 LLM wiring & contract migration: merged P0 foundations, migrated schema, wired call_structured, 120 tests → `sessions/2026-11-22_junda_a2-llm-wiring.md`
+- 2026-11-21 · Serdar · A5 session 2: PR #2 fitted to the pipeline (Matteo's 4 changes), weaknesses fixed, AI fact-check + safety net, event-loop fix, A5 spec updated; 6 items for Matteo → `sessions/2026-11-21_serdar_a5-pipeline-and-fixes.md`
 - 2026-11-21 · Matteo · Streamlit chat UI (`app.py`): cases, versions + PDF downloads, risk badge, attachments, live agent progress; localhost-only config → `sessions/2026-11-21_matteo_app-ui.md`
 - 2026-11-21 · Matteo · reviews of Junda's + Alibek's branches; D-014 severity anchors (S=3, reach → Likelihood) → `sessions/2026-11-21_matteo_branch-reviews.md`
 - 2026-11-21 · Matteo · director review of PR #2 (A5): 10 items decided, D-013 contract additions; PR #2 needs interface fix → `sessions/2026-11-21_matteo_a5-review.md`

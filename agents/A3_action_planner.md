@@ -2,6 +2,7 @@
 
 > **New chat? Load in this order:** `AGENTS.md` → `STATUS.md` → `PROJECT.md` (esp. §4 actions, §8 KB) → this file.
 > **Owns:** `src/agents/a3_actions.py`, `src/prompts/a3_actions.md`, `tests/test_a3_*.py`.
+> **Updated 2026-11-23 (Serdar, session 3):** output section now follows the pipeline contract (`A3Output`), code-built records, checks (§4b). Listed under *Needs director review* in `sessions/2026-11-23_serdar_a3-actions.md`.
 > Replaces the original 3a/3b/3c split (D-003): one planner sees all three domains and produces **one coherent plan**.
 
 ## 1. Mission
@@ -11,15 +12,27 @@ A3 drafts and recommends. It never claims anything was done unless the user said
 ## 2. Input
 `claims`, `impacts` (3 domains), `risk`, `focus`, previous `actions` + `stakeholders`, the current turn's user text (for status updates), A4 issues (on a revise run), KB (cached).
 
-## 3. Output
+## 3. Output (pipeline contract, `src/contracts.py`)
+`run(state, turn) -> A3Output(actions=[...], stakeholders=[...])`
+- `actions`: only **new or changed** actions, as full `Action` objects. A0 merges them by ID, never deletes, and rejects an update that does not keep the earlier `status_history` entries.
+- `stakeholders`: the full current map (replaces the previous one; an empty list keeps the old map).
+- No `closure_open_actions`: on CLOSE the pipeline computes `closure.open_actions` itself (statuses proposed / approved / in_progress).
+- On an A4 REVISE targeting A3, A3 runs once more and finds the critic's issues in `state.qa.issues` (target `A3`).
+- API errors (`LLMError`) go up to the pipeline, like A1/A2.
+
+**How the records are built (session 3 design):** the LLM returns a short *plan*, and **code** builds the `Action` records:
 ```json
 {
-  "actions_new":     [ /* Action objects (PROJECT §4), IDs ACT-xxx continuing */ ],
-  "actions_updated": [ { "action_id": "ACT-004", "to": "completed", "reason": "User: hold done 22 Nov", "result_evidence_source_ids": [] } ],
-  "stakeholders":    [ /* full current map */ ],
-  "closure_open_actions": []          // only on CLOSE: action IDs still not completed/verified
+  "new_actions": [ { "title": "...", "what_it_does": "...", "owner": "...", "approver": null, "timing": "within 24h", "priority": "P1",
+                     "focus_related": true, "domains": ["economic"], "options_considered": [ ... ], "basis_source_ids": ["KB-12"],
+                     "expected_effect": "...", "initial_status": "proposed", "result_evidence_source_ids": [], "reason": "..." } ],
+  "changes":     [ { "action_id": "ACT-001", "new_status": "completed", "reason": "User: hold done", "result_evidence_source_ids": ["U-03"],
+                     "priority": null, "what_it_does": null } ],
+  "stakeholders": [ /* full current map */ ],
+  "no_action_reasons": [ "economic: no action, because …" ]
 }
 ```
+Code assigns new IDs (continuing the numbering, never reused), writes a `status_history` entry for this version for every status change (with the reason), keeps all earlier entries, and keeps `status` equal to the last entry. A new action starts as `proposed`, or at the status the **user** reported (approved / in_progress / completed, never verified). Without a case focus, `focus_related` is always `null` (D-013).
 
 ## 4. Planning rules
 1. **Cover the impacts.** Every High/Critical domain impact gets at least one action, or an explicit "no action, because…".
@@ -32,7 +45,30 @@ A3 drafts and recommends. It never claims anything was done unless the user said
 8. **Feasibility and policy**: no remote/firmware fix for PCX-100 (KB-03); no asking customers for passwords or recordings (KB-04); public text must not blame customers, contain personal data, or claim "all units tested" / "authorities contacted" / "independent tests" unless confirmed (KB-10); the system only drafts statements and notifications and never "sends" them.
 9. **Draft wording**: for communication actions, include a short draft holding statement in `what_it_does` or an attached field, following KB-10 dos and don'ts (marked "draft, needs Anna + Maya/Sophie review").
 
-## 5. Draft runtime system prompt
+## 4b. Checks (agreed with Serdar, session 3)
+| Check | Kind |
+|---|---|
+| Owner, approver or stakeholder `acme_contact` not on the KB-02 contact sheet | hard |
+| `basis_source_ids` not a registered source or KB-01…KB-13; `result_evidence_source_ids` not registered evidence about this incident (KB files can't prove a result) | hard |
+| Change to an unknown action ID, or the same action changed twice | hard |
+| Invalid action (e.g. `verified_*` without result evidence) | hard |
+| New action that duplicates an existing title (e.g. on a revise run) | hard |
+| Banned phrases (KB-03, KB-04, KB-09, KB-10, scenario S2: remote fix, all units tested, authorities contacted, independent tests, asking for passwords/recordings, recovery proves nothing was viewed, data is safe / no breach) and personal data in A3's texts (shared `src/report/checks.py`); a negation within 5 words is fine | hard |
+| Status changed in a turn where the user reported nothing (no text, no attachment) | hard |
+| Empty title or `what_it_does` | hard |
+| No `basis_source_ids` and not labelled "no precedent" / "general knowledge"; empty `expected_effect` | soft |
+| `focus_related` missing on a live action when the case has a focus | hard |
+| High/Critical domain with no action and no "no action, because" | soft |
+| Major decision (hold, recall, statement, notification… in the title) without ≥2 options and exactly one chosen | soft |
+| Recall / withdrawal / large remedy without Daniel Moretti (CEO) as approver | soft |
+| Injury / authority / personal-data action without Sophie Laurent (Legal/DPO) | soft |
+
+Hard problems trigger the single retry in `llm.call_structured`; if they remain, the valid parts are kept and the rest is reported. All warnings are logged (`A3Output` has no warnings field yet: proposal to the director).
+
+## 5. Runtime system prompt
+The live prompt is `src/prompts/a3_actions.md` (the draft below + the planning rules above, the plan format, the focus and revise rules). `llm.py` adds `COMMON_RULES` and the KB block. Model: Sonnet 5.5 (D-012), effort `high`.
+
+Original draft:
 ```
 You are the Action Planner in ACME's crisis-management system. Using the evidence ledger, the three domain impact
 assessments, the overall risk and the ACME knowledge base, maintain a single coordinated action plan.
@@ -48,8 +84,10 @@ the result. You draft and recommend; you never execute recalls, notifications or
 ```
 
 ## 6. Acceptance tests
-- [ ] S1 turn 1: P1 actions include sample collection via Care→Quality (KB-03), holding statement draft (KB-08/10), warehouse-hold **options** for PCX-2609-A/B with KB-12 cost, Legal/DPO looped in (F1). All owners are from KB-02.
-- [ ] No action says "remote update", "all units tested", or "authorities contacted" (unless the user said so).
-- [ ] User says "Elena approved the hold" → ACT status proposed→approved with reason. No jump to completed.
-- [ ] User reports a result with data → `verified_effective` only with a result source.
-- [ ] CLOSE → `closure_open_actions` lists everything not completed/verified.
+- [ ] S1 turn 1: P1 actions include sample collection via Care→Quality (KB-03), holding statement draft (KB-08/10), warehouse-hold **options** for PCX-2609-A/B with KB-12 cost, Legal/DPO looped in (F1). *Needs a live run.* Code guarantees: owners only from KB-02 (hard check); major decisions without options flagged (soft).
+- [x] No action says "remote update", "all units tested", or "authorities contacted" (unless the evidence says so): hard check, retried (tested).
+- [x] User says "Elena approved the hold" → proposed→approved with reason, no jump to completed: the code records exactly the reported status with a version entry (tested through the pipeline over two turns). *Whether the LLM picks "approved" needs a live run.*
+- [x] `verified_effective` only with a result source about this incident (contract + hard check, tested).
+- [x] CLOSE → open actions listed: done by the pipeline (`closure.open_actions`), not by A3.
+- [x] Records: IDs continue, history kept for A0's merge rule, duplicates and unknown IDs rejected (tested).
+- [ ] Live run on Sonnet 5.5 with S1 turns 1–4 (planned with the A5 live test).

@@ -166,6 +166,11 @@ def test_id_mentioned_in_case_data_may_be_cited(state):
     "ACME tested all chargers.",
     "A software update for the PCX-100 charger will solve it.",
     "No recording was viewed.",
+    # session 3 (KB-04, KB-09, scenario S2)
+    "Your data is safe.",
+    "No breach has occurred.",
+    "The account recovery shows the recordings were not viewed.",
+    "We asked customers to send their camera recordings.",
 ])
 def test_banned_phrases_are_caught(state, sentence):
     assert a5_report.find_banned_phrases(dict(GOOD, situation=sentence), state)
