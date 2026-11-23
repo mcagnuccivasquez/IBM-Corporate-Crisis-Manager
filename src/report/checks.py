@@ -4,6 +4,7 @@ renderer (safety net on other agents' texts, warnings only).
 Two kinds of check (agreed with Serdar, 2026-11-21):
 - HARD (reliable): invented numbers (digits or words), IDs that the case data never
   mentions, banned phrases from ACME's own files (KB-03, KB-04, KB-09, KB-10), personal data
+  mentions, banned phrases from ACME's own files (KB-03, KB-09, KB-10), personal data
   (emails, @handles, phones, "R. Dubois" / "Mr X" style names). On the A5 narrative they
   trigger the one retry in llm.call_structured; what is left becomes a warning.
 - SOFT (heuristics, may misfire): "confirmed" said about a non-confirmed claim, a risk
@@ -203,6 +204,10 @@ BANNED_PHRASES = [
      r"|\bno\s+(?:data\s+|security\s+)?breach\s+(?:has\s+|had\s+)?(?:occurred|happened|taken\s+place|took\s+place)\b"
      r"|\bno\s+(?:personal\s+|customer\s+)?(?:data|recordings?)\s+(?:was|were|has\s+been|have\s+been)\s+(?:accessed|exposed|compromised|leaked)\b",
      "KB-04, scenario S2", None),
+    ("password change proves no recording was viewed",
+     r"\bpassword\s+(?:change|reset)\s+(?:proves|shows|confirms|ensures|guarantees|means)\b"
+     r"|\bno\s+(?:earlier\s+)?recordings?\s+(?:was|were|has\s+been|have\s+been)\s+(?:viewed|accessed|seen)\b",
+     "KB-09", None),
 ]
 
 
@@ -239,6 +244,7 @@ _INITIAL_NAME = re.compile(
     r"(?<!\bbatch )(?<!\bbatches )(?<!\boption )(?<!\boptions )(?<!\bplan )(?<!\bphase )(?<!\btype )"
     r"(?<!\bmodel )(?<!\bclass )(?<!\bgrade )(?<!\bpart )(?<!\bunit )(?<!\band )(?<!\bor )(?<!\bvs )"
     r"\b[A-Z]\.\s?([A-Z][a-z]{2,})\b")
+_INITIAL_NAME = re.compile(r"\b[A-Z]\.\s?([A-Z][a-z]{2,})\b")
 _NOT_A_SURNAME = {"The", "This", "That", "These", "Those", "Then", "There", "It", "Its", "In", "On", "At",
                   "As", "An", "And", "But", "If", "No", "Not", "We", "All", "Any", "Each", "For", "From",
                   "Risk", "Quality", "Customer", "Care", "Legal", "Security", "Finance", "Supply"}
