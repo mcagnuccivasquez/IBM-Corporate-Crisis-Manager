@@ -411,6 +411,7 @@ def test_run_logs_warnings(state, caplog):
         out = a3.run(state, TURN2, client=FakeClient(p))
     assert isinstance(out, A3Output)
     assert "major decision needs >= 2 options" in caplog.text
+    assert any("major decision needs >= 2 options" in w for w in out.warnings)  # D-015
 
 
 # ---------------------------------------------------------------- pipeline

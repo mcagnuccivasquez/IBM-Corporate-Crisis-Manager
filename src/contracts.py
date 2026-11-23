@@ -451,6 +451,8 @@ class A1Output(_Model):
 class A3Output(_Model):
     actions: list[Action] = Field(default_factory=list)
     stakeholders: list[Stakeholder] = Field(default_factory=list)  # full current list (replaces)
+    # D-015: A3's own check warnings; A0 turns each into a non-blocking QAIssue(target="A3")
+    warnings: list[str] = Field(default_factory=list)
 
 
 class A4Output(_Model):

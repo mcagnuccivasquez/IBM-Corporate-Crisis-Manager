@@ -63,7 +63,7 @@ Code assigns new IDs (continuing the numbering, never reused), writes a `status_
 | Recall / withdrawal / large remedy without Daniel Moretti (CEO) as approver | soft |
 | Injury / authority / personal-data action without Sophie Laurent (Legal/DPO) | soft |
 
-Hard problems trigger the single retry in `llm.call_structured`; if they remain, the valid parts are kept and the rest is reported. All warnings are logged (`A3Output` has no warnings field yet: proposal to the director).
+Hard problems trigger the single retry in `llm.call_structured`; if they remain, the valid parts are kept and the rest is reported. All warnings are returned in `A3Output.warnings` (D-015, approved 2026-11-23); A0 turns each into a non-blocking `QAIssue(target="A3")`, so they appear in the report's Appendix C (they are also logged).
 
 ## 5. Runtime system prompt
 The live prompt is `src/prompts/a3_actions.md` (the draft below + the planning rules above, the plan format, the focus and revise rules). `llm.py` adds `COMMON_RULES` and the KB block. Model: Sonnet 5.5 (D-012), effort `high`.

@@ -87,6 +87,44 @@ def test_history_rewrite_is_rejected_by_merge_rule():
     assert any(i.item_id == "C-002" and "Merge rule" in i.problem for i in r.state.qa.issues)
 
 
+def test_a3_warnings_become_non_blocking_qa_issues():
+    """D-015: A3Output.warnings -> QAIssue(target="A3", blocking=False) in the state."""
+    def a3_warn(state, turn):
+        out = stubs.a3(state, turn)
+        out.warnings = ["reputational impact is High/Critical but no action covers it"]
+        return out
+
+    r = pipeline.run_turn(TEXT_V1, agents=agents(a3=a3_warn))
+    hits = [i for i in r.state.qa.issues if i.target == "A3" and "no action covers it" in i.problem]
+    assert r.error is None and len(hits) == 1 and not hits[0].blocking
+
+
+def test_a3_warnings_only_from_latest_run_after_revise():
+    """If A4 sends A3 back once, the first run's warnings are dropped (D-015)."""
+    calls = {"a3": 0, "a4": 0}
+
+    def a3_counted(state, turn):
+        calls["a3"] += 1
+        out = stubs.a3(state, turn)
+        out.warnings = [f"warning from A3 run {calls['a3']}"]
+        return out
+
+    def a4_revise_once(state, turn):
+        calls["a4"] += 1
+        out = stubs.a4(state, turn)
+        if calls["a4"] == 1:
+            out.qa.verdict = "REVISE"
+            out.qa.issues = [i.model_copy(update={"blocking": False}) for i in out.qa.issues] + [
+                out.qa.issues[0].model_copy(update={"target": "A3", "item_id": None, "blocking": True,
+                                                    "problem": "fix the plan"})]
+        return out
+
+    r = pipeline.run_turn(TEXT_V1, agents=agents(a3=a3_counted, a4=a4_revise_once))
+    problems = [i.problem for i in r.state.qa.issues if i.target == "A3"]
+    assert r.error is None and calls["a3"] == 2
+    assert "warning from A3 run 2" in problems and "warning from A3 run 1" not in problems
+
+
 def test_mutated_invalid_agent_output_is_caught():
     """An agent that edits a model after creation bypasses validators; the pipeline re-validates."""
     def a1_sloppy(state, turn):
