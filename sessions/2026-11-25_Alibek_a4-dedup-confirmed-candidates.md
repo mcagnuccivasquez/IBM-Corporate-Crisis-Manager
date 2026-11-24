@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Who | Alibek |
-| Start → end | 16:05 → |
+| Start → end | 16:05 → 16:15 |
 | Tool / LLM | IBM Bob |
 | Working on | A4 Critic & Outlook — follow-up from Matteo's PR #12 review |
 | Branch | alibek/a4-critic-outlook-and-scenarios |
@@ -16,30 +16,33 @@
 - 16:08 · `tests/test_a4_critic.py` — added INT-4: fake LLM confirms ACT-002 pre-pass candidate → verdict REVISE, exactly 1 ACT-002 issue in output (no duplicate), that issue is blocking
 - 16:09 · `py -m pytest tests/test_a4_critic.py -v` → 19/19 passed
 - 16:10 · `py -m pytest -q` → 348/351 passed; 3 pre-existing A5 PDF/Playwright failures (chromium not installed, known from STATUS.md)
+- 16:12 · STATUS.md: cleared stale "Fix S1 action IDs" note — ACT-004 rename was already done last session; pushed `3c546d1`
+- 16:14 · Verified A4 is fully built, tested, merged (PR #12); only remaining gate is Matteo's live S1 API run
 
 ## Summary
 
-Applied all three items from Matteo's post-PR-#12 review comment:
-1. Prompt now gives the LLM a single unambiguous instruction: confirm a candidate → report it blocking with same target+item_id; ignore false alarms.
-2. Merge step deduplicates by (target, item_id) pair when item_id is set, so a confirmed pre-pass hit appears only once in Appendix C.
-3. INT-4 test covers the new behaviour end-to-end with a fake LLM.
+Applied all three items from Matteo's post-PR-#12 review comment, cleared a stale STATUS.md note, and confirmed A4 is fully built and merged. Prompt now gives the LLM a single unambiguous instruction for pre-pass candidates. Merge step deduplicates by (target, item_id) so a confirmed candidate appears exactly once in Appendix C. INT-4 covers this end-to-end. 19/19 A4 tests pass, 348/351 suite-wide (3 pre-existing Playwright failures).
 
 ## Done
-- Prompt instruction cleaned up (no more conflicting "do NOT repeat" vs "mark blocking")
+- Prompt instruction unified: confirm candidate → report as own blocking issue with same target+item_id; ignore false alarms
 - Code merge step: dedup by (target, item_id) when item_id is not None
 - Test INT-4: LLM confirms one candidate → REVISE, no duplicate issue
+- Stale STATUS.md note "Fix S1 action IDs" cleared — was already done in last session (ACT-004 rename)
+- Confirmed A4 fully built, tested, merged (PR #12)
 
 ## Not done / blockers
-- Live API test of A4 (waiting for Matteo to run S1)
+- Live API test of A4 (waiting for Matteo to run S1 and report result + cost)
 
 ## Next steps (for whoever picks this up)
-- Matteo runs live S1 with A4 and reports cost/result
-- If new issues surface from the live run, address in this branch or a new PR
+- Matteo runs live S1 with real A4 and reports back — check verdict is PASS, no duplicate issues in Appendix C, cost reasonable
+- If live run surfaces tuning needs, address in a new PR on this branch
 
 ## Files touched
 - `src/prompts/a4_critic.md`
 - `src/agents/a4_critic.py`
 - `tests/test_a4_critic.py`
+- `STATUS.md`
+- `sessions/2026-11-25_Alibek_a4-dedup-confirmed-candidates.md` (this file)
 
 ## Needs director review
 - none
