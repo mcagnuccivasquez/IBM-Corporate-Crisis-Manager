@@ -26,7 +26,7 @@ Expected: `ACTION_UPDATE`
 - Existing case: `CASE-S1`, `version`: 2 → will become `version`: 3 after this turn.
 - Prior state (v2): C-001 confirmed, risk=Critical (F2), batch hold proposed, Legal briefed.
 - New information this turn:
-  - `ACT-001` (hold on PCX-2609-B) → **`completed`** (Luca confirmed)
+  - `ACT-004` (hold on PCX-2609-B) → **`completed`** (Luca confirmed)
   - `ACT-002` (holding statement) → **`completed`** (live on social)
   - DE retailer has been contacted (ACT responding to retailer → `completed`)
   - New ticket data: 6 new PCX-100 heat tickets this week vs 2 last week — **rising trend**, but no new smoke/fire reports

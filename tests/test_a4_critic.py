@@ -181,9 +181,10 @@ def _revise_payload(check: str, item_id: str, problem: str, fix_hint: str, block
 class TestPrepass:
     """Tests for _prepass_issues directly — no LLM involved."""
 
-    def test_pp1_banned_phrase_in_action_is_blocking(self):
-        """PP-1: 'independent tests' (KB-10 banned phrase) in what_it_does → blocking issue.
+    def test_pp1_banned_phrase_in_action_fires_nonblocking(self):
+        """PP-1: 'independent tests' (KB-10 banned phrase) in what_it_does → non-blocking candidate.
 
+        Pre-pass issues are always non-blocking; the LLM decides whether to elevate to blocking.
         Note: 'all units tested' is skipped by checks.py when it appears in KB-10's
         reliability_note (the evidence support text), which is correct behaviour.
         'independent tests' does not appear in the fixture support text and fires reliably.
@@ -194,12 +195,16 @@ class TestPrepass:
         )
         state = CaseState.model_validate(s)
         issues = a4._prepass_issues(state)
-        assert any(i.blocking for i in issues), "Expected at least one blocking issue"
+        assert issues, "Expected at least one pre-pass issue"
         problems = " ".join(i.problem for i in issues)
         assert "independent" in problems.lower() or "banned phrase" in problems.lower()
+        assert all(not i.blocking for i in issues), "Pre-pass hits must all be non-blocking"
 
     def test_pp2_personal_data_in_outlook_targets_a4(self):
-        """PP-2: email address in outlook assumptions → blocking, target A4."""
+        """PP-2: email address in outlook assumptions → non-blocking candidate, target A4.
+
+        Pre-pass issues are always non-blocking; the LLM decides whether to elevate to blocking.
+        """
         s = mutate_outlook(
             state_dict(), "assumptions",
             ["Customer r.dubois@gmail.com will return the unit within 24h."]
@@ -208,7 +213,7 @@ class TestPrepass:
         issues = a4._prepass_issues(state)
         a4_issues = [i for i in issues if i.target == "A4"]
         assert a4_issues, "Expected an A4 issue for personal data in outlook"
-        assert all(i.blocking for i in a4_issues)
+        assert all(not i.blocking for i in a4_issues), "Pre-pass hits must be non-blocking"
 
     def test_pp3_blame_wording_in_action_is_non_blocking(self):
         """PP-3: customer misuse wording → non-blocking."""
@@ -347,8 +352,12 @@ class TestA4Integration:
 
     # -- INT-1 ---------------------------------------------------------------
 
-    def test_int1_prepass_issues_added_even_when_llm_omits_them(self, monkeypatch):
-        """INT-1: Pre-pass hits are merged into output even if the LLM ignores them."""
+    def test_int1_prepass_issues_merged_even_when_llm_omits_them(self, monkeypatch):
+        """INT-1: Pre-pass hits are merged into output even if the LLM ignores them.
+
+        Pre-pass issues are non-blocking, so when the LLM returns PASS the final verdict
+        stays PASS — but the pre-pass issue must still appear in qa.issues.
+        """
         # Plant a banned phrase that the pre-pass will catch ('independent tests' is not in
         # KB-10 reliability_note text, so it fires reliably)
         s = mutate_action(
@@ -357,16 +366,19 @@ class TestA4Integration:
         )
         state = CaseState.model_validate(s)
 
-        # LLM returns PASS (pretends it missed the problem)
+        # LLM returns PASS (the pre-pass candidate is non-blocking, so PASS stands)
         fc = FakeClient(_pass_payload())
         monkeypatch.setattr("src.llm.get_client", lambda: fc)
 
         result = a4.a4(state, TURN1)
 
-        # Merge must have added the pre-pass issue and flipped verdict to REVISE
-        assert result.qa.verdict == "REVISE", "Pre-pass blocking issue must override LLM PASS"
+        # Pre-pass issue must be in the output even though LLM said nothing about it
         problems = [i.problem for i in result.qa.issues]
-        assert any("independent" in p.lower() or "banned phrase" in p.lower() for p in problems)
+        assert any("independent" in p.lower() or "banned phrase" in p.lower() for p in problems), \
+            "Pre-pass candidate must be merged into qa.issues even when LLM omits it"
+        # Verdict stays PASS because the pre-pass issue is non-blocking
+        assert result.qa.verdict == "PASS", \
+            "Non-blocking pre-pass issue must not flip verdict to REVISE"
 
     # -- INT-2 ---------------------------------------------------------------
 

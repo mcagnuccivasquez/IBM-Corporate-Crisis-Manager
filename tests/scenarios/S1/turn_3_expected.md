@@ -14,7 +14,7 @@
 - `risk.reasons` must explicitly state why the level did not change
 
 ### Actions
-- `ACT-001` (batch hold PCX-2609-B) status → **`"completed"`**
+- `ACT-004` (batch hold PCX-2609-B) status → **`"completed"`**
   - `result_evidence_source_ids` must reference the new user confirmation source
   - Must NOT be `"verified_effective"` yet — no evidence that the hold has reduced harm
 - `ACT-002` (holding statement) status → **`"completed"`**
@@ -61,7 +61,7 @@ Risk must stay **Critical**:
 
 - `risk_from` = `"Critical"`, `risk_to` = `"Critical"`
 - `changelog.summary` must explain **why** the level stayed the same (F4 guard, hold not yet verified effective)
-- `action_changes` includes: ACT-001 → completed, ACT-002 → completed, new monitoring action proposed
+- `action_changes` includes: ACT-004 → completed, ACT-002 → completed, new monitoring action proposed
 - `new_source_ids` includes the ticket summary source
 
 ---
@@ -71,7 +71,7 @@ Risk must stay **Critical**:
 `qa.verdict = "PASS"` if:
 - Risk stays Critical with F4 explanation
 - No trap T4 (heat tickets ≠ failure rate)
-- ACT-001 is `completed` not `verified_effective` (M5 check)
+- ACT-004 is `completed` not `verified_effective` (M5 check)
 - Changelog explains the unchanged level (M6 check)
 
 `qa.verdict = "REVISE"` if:

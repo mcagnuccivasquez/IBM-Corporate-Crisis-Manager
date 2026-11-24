@@ -6,13 +6,12 @@ Two steps:
 2. LLM review     — Sonnet 5.5 audits grounding (G1–G3), traps (T1–T12) and method
    consistency (M1–M6), and projects the Outlook.
 
-Pre-pass rule mapping (from the director message, 2026-11-23):
+Pre-pass rule mapping (from the director message, 2026-11-24):
   - ACT-xxx prefix  → target A3
   - stakeholder …   → target A3
   - … impact …      → target A2
   - outlook …       → target A4 (self; own text)
-  - banned phrase, personal data → blocking=True
-  - blame wording   → blocking=False (soft; LLM review decides)
+  - ALL hits        → blocking=False (the LLM decides; pre-pass issues are candidates only)
 """
 
 from __future__ import annotations
@@ -37,17 +36,18 @@ from src.report.checks import check_other_agents
 
 
 def _prepass_issues(state: CaseState) -> list[QAIssue]:
-    """Run check_other_agents; map each hit to a QAIssue."""
+    """Run check_other_agents; map each hit to a QAIssue.
+
+    All hits are non-blocking: they are automatic candidates and can be false alarms
+    (e.g. a quoted banned phrase vs. an asserted one). The LLM review decides whether
+    each one is actually blocking (see T11 in the prompt).
+    """
     hits = check_other_agents(state.model_dump(mode="json"))
     issues: list[QAIssue] = []
     for hit in hits:
         # Determine owning agent and item_id from the label prefix
         label = hit.split(":")[0].strip()  # e.g. "ACT-002 what_it_does" / "outlook assumptions 1"
         target, item_id = _map_label(label)
-
-        # Blocking: banned phrases and personal data are hard; blame is soft
-        is_soft = "(automatic check; may be a false alarm" in hit or "wording may blame" in hit
-        blocking = not is_soft
 
         issues.append(
             QAIssue(
@@ -57,7 +57,7 @@ def _prepass_issues(state: CaseState) -> list[QAIssue]:
                 fix_hint=(
                     "Remove or replace the flagged text. See src/report/checks.py for the rule."
                 ),
-                blocking=blocking,
+                blocking=False,
             )
         )
     return issues
@@ -86,10 +86,8 @@ def _map_label(label: str) -> tuple[AgentId, str | None]:
 def a4(state: CaseState, turn: TurnInput) -> A4Output:
     """Run A4 Critic & Outlook.
 
-    1. Free pre-pass with check_other_agents.
-    2. If pre-pass found blocking issues and there are more than 3 blocking hits,
-       skip the LLM call to save cost — verdict is already REVISE.
-       Otherwise always call the LLM for the full audit and outlook.
+    1. Free pre-pass with check_other_agents (all hits non-blocking — LLM decides).
+    2. Always call the LLM for the full audit and outlook.
     3. Merge pre-pass issues into the LLM result (deduplicate by problem text).
     """
     prepass = _prepass_issues(state)
@@ -97,11 +95,17 @@ def a4(state: CaseState, turn: TurnInput) -> A4Output:
     # Build user content for the LLM
     prev_qa_summary = ""
     if prepass:
-        lines = [f"  - [{'+blocking' if i.blocking else 'warning'}] {i.problem}" for i in prepass]
+        lines = [f"  - [candidate] {i.problem}" for i in prepass]
         prev_qa_summary = (
             "\n\n<pre_pass_issues>\n"
-            "The following issues were found by the automated check before your review.\n"
-            "Include each relevant issue in your qa.issues (do not omit or contradict them):\n"
+            "The following issues were found by the automated pre-pass before your review.\n"
+            "They are automatic candidates and can be false alarms — for example, a quoted banned\n"
+            "phrase vs. one that is actually asserted. For each one, judge whether the text truly\n"
+            "asserts the phrase or exposes personal data in wording meant for the public. Mark it\n"
+            "blocking (T11) only if it does; if it is a quotation or a note about what to avoid,\n"
+            "mark it non-blocking or omit it.\n"
+            "Do NOT repeat or rephrase these issues in your own qa.issues — they will be appended\n"
+            "automatically. Only add your own independent findings:\n"
             + "\n".join(lines)
             + "\n</pre_pass_issues>"
         )

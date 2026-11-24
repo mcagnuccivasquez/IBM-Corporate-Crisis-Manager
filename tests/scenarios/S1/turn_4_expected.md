@@ -18,7 +18,7 @@
 - `risk.level` = **`"Medium"`** or **`"High"`** — reduced from Critical
 - **F4 de-escalation must be justified**: level drops because:
   1. C-001 (smoke/melt) is still `confirmed` but contained — no new incidents in 5 days
-  2. ACT-001 (batch B hold) reaches `verified_effective` (5 days no incidents = result evidence)
+  2. ACT-004 (batch B hold) reaches `verified_effective` (5 days no incidents = result evidence)
   3. Batch A cleared by lab (new claim: `confirmed`, `disproved` scope of defect to batch B only)
 - `risk.reasons` must name which claim or action justified the drop (F4 rule)
 
@@ -28,7 +28,7 @@
 - C-001 remains `confirmed` — it is not disproved; a real incident occurred
 
 ### Actions
-- `ACT-001` (batch B hold) status → **`"verified_effective"`**
+- `ACT-004` (batch B hold) status → **`"verified_effective"`**
   - `result_evidence_source_ids` must include the "no new incidents" source
 - Monitoring action from turn 3 → **`"completed"`** (baseline restored) or kept `in_progress` with note
 - All remaining open actions must be listed in `closure.open_actions`
@@ -65,8 +65,8 @@ Must include concrete, observable triggers such as:
 | Economic | 2 | 2 | 4 → Medium (batch B still held; replacement costs for confirmed units) |
 | Legal/regulatory | 2 | 1 | 2 → Low (legal confirmed no authority notification; defect scoped to batch B) |
 | **Max domain score** | | | **4 → Medium** |
-| **F2 no longer applies** | | | ACT-001 `verified_effective`; no new incidents |
-| **F4 satisfied** | | | ACT-001 → verified_effective named in reasons |
+| **F2 no longer applies** | | | ACT-004 `verified_effective`; no new incidents |
+| **F4 satisfied** | | | ACT-004 → verified_effective named in reasons |
 
 Final level: **Medium**
 
@@ -77,7 +77,7 @@ Final level: **Medium**
 ```json
 "closure": {
   "remaining_risk": "Batch PCX-2609-B remains under warehouse hold. 5,000 units were delivered to DE/IT/FR channels; not all will have been sold. Batch PCX-2609-A cleared by lab. No new smoke/fire reports in 5 days post-hold. Residual risk: units already in consumers' hands from batch B.",
-  "open_actions": ["ACT-001 batch hold — ongoing until Quality determines disposition of held stock"],
+  "open_actions": ["ACT-004 batch hold — ongoing until Quality determines disposition of held stock"],
   "reopen_conditions": [
     "Any new smoke, fire, burning, or electric shock report on any PCX-100 unit",
     "Any contact from a national market surveillance or product-safety authority",
@@ -92,15 +92,15 @@ Final level: **Medium**
 ## Changelog check
 
 - `risk_from` = `"Critical"`, `risk_to` = `"Medium"`
-- `changelog.summary` must name: ACT-001 → verified_effective; batch A cleared by lab
-- `action_changes` includes ACT-001 → verified_effective
+- `changelog.summary` must name: ACT-004 → verified_effective; batch A cleared by lab
+- `action_changes` includes ACT-004 → verified_effective
 
 ---
 
 ## A4 QA verdict expectation
 
 `qa.verdict = "PASS"` if:
-- Risk drops with F4 justification (names ACT-001 verified_effective + batch A cleared)
+- Risk drops with F4 justification (names ACT-004 verified_effective + batch A cleared)
 - `closure.reopen_conditions` is non-empty and concrete
 - C-001 remains `confirmed` (the incident happened; it is not disproved)
 - No T6, T7, R18 violations
