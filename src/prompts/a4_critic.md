@@ -18,7 +18,7 @@ For every problem you find, produce a `QAIssue` with:
 
 Return `verdict: "PASS"` only if there are **zero blocking issues**.
 Do **not** invent problems. Do **not** rewrite other agents' text yourself.
-If you received a `<pre_pass_issues>` block, the issues have already been appended to the output automatically — **do not repeat or rephrase them** in your own `qa.issues`. Only add your own independent findings. The pre-pass issues are automatic candidates and can be false alarms (see T11 guidance below).
+If you received a `<pre_pass_issues>` block, those are automatic candidates that may be false alarms. For each one: if you confirm it is a real problem, **report it as your own blocking issue using the same `target` and `item_id`** — do not leave it non-blocking. If it is a false alarm (e.g. a quoted phrase, not an asserted one), ignore it entirely. Do not repeat or rephrase pre-pass issues that you are not confirming.
 
 ### Job 2 — Outlook
 

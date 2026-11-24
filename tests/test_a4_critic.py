@@ -462,3 +462,43 @@ class TestA4Integration:
 
         user_msg = fc.calls[0]["messages"][-1]["content"]
         assert "pre_pass_issues" not in user_msg
+
+    # -- INT-4 ---------------------------------------------------------------
+
+    def test_int4_llm_confirms_prepass_candidate_no_duplicate(self, monkeypatch):
+        """INT-4: When the LLM confirms a pre-pass candidate with the same target+item_id,
+        the pre-pass entry is dropped from the merge so Appendix C shows it only once,
+        and the verdict is REVISE (the LLM's version is blocking).
+        """
+        # Plant 'independent tests' — the pre-pass will catch it on ACT-002
+        s = mutate_action(
+            state_dict(), "ACT-002", "what_it_does",
+            "Third-party independent tests have confirmed the chargers are safe."
+        )
+        state = CaseState.model_validate(s)
+
+        # LLM confirms the same candidate: target=A3, item_id=ACT-002, blocking=True
+        llm_resp = _revise_payload(
+            check="T11",
+            item_id="ACT-002",
+            problem="ACT-002 what_it_does: 'independent tests' is a banned phrase (KB-10) asserted as fact.",
+            fix_hint="Remove the independent-tests claim; it is not supported by evidence.",
+            blocking=True,
+        )
+        fc = FakeClient(llm_resp)
+        monkeypatch.setattr("src.llm.get_client", lambda: fc)
+
+        result = a4.a4(state, TURN1)
+
+        # Verdict must be REVISE
+        assert result.qa.verdict == "REVISE"
+
+        # Count issues that reference ACT-002 — must be exactly 1 (no duplicate)
+        act002_issues = [i for i in result.qa.issues if i.item_id == "ACT-002"]
+        assert len(act002_issues) == 1, (
+            f"Expected exactly 1 ACT-002 issue (no duplicate), got {len(act002_issues)}: "
+            f"{[i.problem for i in act002_issues]}"
+        )
+
+        # That one issue must be blocking (the LLM's confirmed version)
+        assert act002_issues[0].blocking, "Confirmed candidate must be blocking"

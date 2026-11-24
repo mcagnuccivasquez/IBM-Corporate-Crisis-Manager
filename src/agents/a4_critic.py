@@ -125,9 +125,22 @@ def a4(state: CaseState, turn: TurnInput) -> A4Output:
         case_id=state.case_id,
     )
 
-    # Merge: add any pre-pass issue whose problem text is not already in the LLM output
+    # Merge: add pre-pass issues not already covered by the LLM output.
+    # A pre-pass issue is considered covered when the LLM returned an issue with the
+    # same (target, item_id) pair *and* item_id is not None — that means the LLM
+    # confirmed the candidate as its own blocking issue.  Also skip exact problem-text
+    # duplicates as before.
+    llm_keyed: set[tuple[str, str]] = {
+        (i.target, i.item_id)
+        for i in llm_output.qa.issues
+        if i.item_id is not None
+    }
     existing_problems = {i.problem for i in llm_output.qa.issues}
-    extra = [i for i in prepass if i.problem not in existing_problems]
+    extra = [
+        i for i in prepass
+        if i.problem not in existing_problems
+        and not (i.item_id is not None and (i.target, i.item_id) in llm_keyed)
+    ]
     merged_issues = llm_output.qa.issues + extra
 
     # Re-evaluate verdict: any blocking issue → REVISE (corrects LLM if it said PASS with blocking issues)
