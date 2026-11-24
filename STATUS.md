@@ -1,6 +1,6 @@
 # STATUS — current state of the project
 
-_Last updated: 2026-11-23 18:35 · by: Matteo (reviews + D-015 session)_
+_Last updated: 2026-11-24 13:35 · by: Alibek (a4-prepass-nonblocking session)_
 
 **Next deadline:** Playback 2 · **Tue 24 Nov 2026** · demo target: scenario S1 turn 1 → Report v1 PDF
 **Final:** Wed 2 Dec 2026
@@ -18,6 +18,9 @@ _Last updated: 2026-11-23 18:35 · by: Matteo (reviews + D-015 session)_
 | A3 Action Planner | A3 | **Serdar** | in review (PR #13) | Live-API schema fix on `serdar/a3-schema-demo-fixes` (all plan fields required, no nullable; offline guard test). Next: Matteo merges + one live A3 call; prompt fixes 4–5 |
 | A4 Critic & Outlook | A4 | **Alibek** | not started | Starts 25 Nov; consider reusing A5's `check_other_agents` as a free first pass; fix S1 using ACT-001 for two actions |
 | A5 Report Writer (template + PDF) | A5 | **Serdar** | in review (PR #13) | v1 badge fixed, "confirmed" check now hard, checks.py merge damage repaired (same fix PR). Next: follow-up PR for number check (skip dates/IDs) + full names |
+| A3 Action Planner | A3 | **Serdar** | done (PR #10) | D-015 warnings field approved (implemented by Matteo); live run |
+| A4 Critic & Outlook | A4 | **Alibek** | in review (PR ready) | Pre-pass hits → non-blocking (LLM decides); false-alarm prompt added; docstring fixed; basis_source_ids→reasons text; dedup instruction; 18/18 tests pass; needs live API test from Matteo |
+| A5 Report Writer (template + PDF) | A5 | **Serdar** | done (PR #2) | Follow-up PR: v1 badge "— → HIGH" (before the demo), number check, full names |
 | Test scenarios S1–S3 + fixture states (QA lead) | A4 | **Alibek** | done (PR #7) | Fix S1 action IDs (see A4 row) |
 
 _Assignment proposed by the director on 2026-11-21. Swap freely, but update this table._
@@ -50,6 +53,8 @@ Status values: not started · in progress · in review (PR open) · done · bloc
 
 ## Recent sessions (newest first, keep 10)
 - 2026-11-24 · Serdar · demo fixes: A3 live-API schema fix + guard test, v1 badge, "confirmed" check hard, checks.py merge damage repaired; 342 tests → `sessions/2026-11-24_serdar_demo-fixes.md`
+- 2026-11-24 · Alibek · A4 pre-pass non-blocking: pre-pass hits→non-blocking, false-alarm prompt, docstring fix, basis_source_ids fix, dedup instruction, ACT-001 scenario rename → `sessions/2026-11-24_Alibek_a4-prepass-nonblocking.md`
+- 2026-11-23 · Alibek · A4 checks integration: `a4_critic.py`, prompt, 18 tests, Appendix C pass condition in all 7 expected.md files → `sessions/2026-11-23_Alibek_a4-checks-integration.md`
 - 2026-11-23 · Matteo · reviews + D-015: merged PR #8 (A1), #2 (A5), #10 (A3); `A3Output.warnings` → non-blocking QA notes; app runs all real agents except A4; 332 tests → `sessions/2026-11-23_matteo_reviews-d015.md`
 - 2026-11-23 · Serdar · A3 Action Planner: plan → code-built records, hard/soft checks, shared banned phrases (KB-04/S2), requirements audit of A3 + A5; 5 items for Matteo → `sessions/2026-11-23_serdar_a3-actions.md`
 - 2026-11-22 · Giacomo · A1 director-review fixes: prompt renamed `a1_evidence.md`, `_build_context_block`, `check=` KB-id lambda, 33 tests pass; PR pending → `sessions/2026-11-22_giacomo_a1-evidence.md`

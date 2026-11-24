@@ -82,3 +82,22 @@ Final level: **Medium** (or Low if reputational S=1 is argued — both acceptabl
 - F1 applied → blocking, T1
 - Newspaper article counted as independent report → blocking, T2
 - Batch hold or recall proposed → blocking, R18 / T1
+
+---
+
+## Appendix C safety net expectation
+
+`report.narrative_warnings = []` (empty list)
+
+**What must NOT appear in Appendix C:**
+
+| Category | Why it must not fire |
+|---|---|
+| Banned phrase "all units tested" | The clarification action must NOT claim TravelPlug or any current product units have been tested — the 2025 case was resolved; no current testing is proposed |
+| Banned phrase "independent tests" | Same constraint — the response action is a factual clarification, not a testing programme |
+| Personal data | The original post may contain a poster's @handle or name. Neither must appear in action `what_it_does`, impact descriptions, or outlook texts |
+| Blame wording | The poster is spreading a misleading repost — this must not be characterised as the customer's "misuse" or "fault" |
+
+**Key constraint for this scenario:** the repost comes from a 2025 source (KB-07/KB-08). The clarification action will reference that history. Phrases like "our 2025 TravelPlug investigation found no defect and we consider it resolved" are fine. Phrases like "all TravelPlug units were independently tested" would trip the safety net — A4's pre-pass catches it as blocking.
+
+**T11 trap planted in this turn:** The scenario does not plant a T11 trap by default. The natural T1 trap (treating TravelPlug history as current evidence) is a logical error caught by the LLM review, not the regex pre-pass.

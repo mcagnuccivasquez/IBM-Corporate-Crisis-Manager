@@ -92,3 +92,21 @@ Key A4 checks that must pass:
 - T6: VN-3 must not be used to clear other batches
 - M3: Critical legal/regulatory impact must have a corresponding action (Legal briefing + authority notification plan)
 - M5: ACT-001 `completed` only valid if `result_evidence_source_ids` is non-empty
+
+---
+
+## Appendix C safety net expectation
+
+`report.narrative_warnings = []` (empty list)
+
+**What must NOT appear in Appendix C:**
+
+| Category | Why it must not fire |
+|---|---|
+| Banned phrase "all units tested" | The batch hold covers only PCX-2609-B (3,000 warehouse units); no text should claim all units are tested |
+| Banned phrase "authorities contacted" | ACT-003 (Legal/DPO brief) is a brief, not an authority notification — wording must stay "inform" or "assess obligation", not "contacted regulators" |
+| Banned phrase "remote fix for PCX-100" | No action proposes a firmware/OTA fix — the hold is a physical warehouse stop |
+| Personal data | No customer names, emails, or handles appear in action, impact, stakeholder, or outlook texts |
+| Blame wording | Defect is a confirmed manufacturing issue (thermal shutdown above spec); no text implies customer fault |
+
+**T11 trap planted in this turn:** None by default. If a test variation deliberately plants "all units tested" or "authorities contacted" in an action text, A4's pre-pass must catch it as a **blocking** `qa.issues` entry before the PDF renders, so Appendix C stays empty after the revise loop.
