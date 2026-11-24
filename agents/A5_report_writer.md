@@ -33,7 +33,7 @@ LLM output schema (narrative):
 Keys without text are left out (`report.narrative` values must be text, D-013). Every sentence must be traceable to CaseState fields. Cite IDs in brackets, e.g. `[C-007, U-03]`; in the PDF they become small clickable references.
 
 ## 4. Fixed report structure (PROJECT §7; keep the brief's order, D-013)
-0. **Header band**: ACME · Crisis Management Report · CASE-001 · **Version 3** · timestamp · status · focus · big badge **Risk: High → High** (colour + text) · "Evidence confidence: Medium" (separate, smaller badge). Then: **Executive summary** box · **At a glance** (P1 actions with owner, timing and status; evidence counts; open questions) · **How to read this report** legend (C-/U-/KB-/ACT- codes, F1–F4, P1–P3, risk ≠ evidence confidence)
+0. **Header band**: ACME · Crisis Management Report · CASE-001 · **Version 3** · timestamp · status · focus · big badge **Risk: High → High** (colour + text; on v1 just **HIGH**, no "— →", session 4) · "Evidence confidence: Medium" (separate, smaller badge). Then: **Executive summary** box · **At a glance** (P1 actions with owner, timing and status; evidence counts; open questions) · **How to read this report** legend (C-/U-/KB-/ACT- codes, F1–F4, P1–P3, risk ≠ evidence confidence)
 1. Situation
 2. Evidence: three tables **Confirmed** / **Unconfirmed** / **Disproved or misleading**, each with a one-line explanation (claim, strength, sources with titles, history "New in v1 / Changed in v2 / No change since v1")
 3. Risk and reasons: S×L per domain with reasons, floors, how the overall level was set, link to Appendix B
@@ -54,7 +54,7 @@ v1 has no previous version: section 8 says "Initial assessment".
 | IDs the case data never mentions | hard | retry once, then warning | — (shown crossed out in the PDF) |
 | Banned phrases (KB-10: authorities contacted, independent tests, all units tested; KB-03: remote/firmware fix for PCX-100; KB-09: password change proves no recording was viewed), incl. paraphrases; negated use is fine; allowed when the evidence affirms it | hard | retry once, then warning | warning |
 | Personal data: emails (not @acme.example), @handles, phones, "R. Dubois" / "Ms Dubois" names (ACME staff from KB-02 allowed) | hard | retry once, then warning | warning |
-| "Confirmed/proven" about a claim that is not confirmed | soft | warning | — |
+| "Confirmed/proven" about a claim that is not confirmed (hard since session 4, after Matteo's live run) | hard | retry once, then warning | — |
 | Risk level not in the risk data | soft | warning | — |
 | Wording that may blame a customer (KB-10) | soft | warning | warning |
 | Word limits | soft | warning (never cut) | — |

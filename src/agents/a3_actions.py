@@ -26,11 +26,11 @@ from __future__ import annotations
 import json
 import logging
 import re
-from typing import Literal, Optional
+from typing import Literal
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, ValidationError
 
-from src.contracts import A3Output, Action, ActionOption, ActionStatus, CaseState, Domain, Priority, Stakeholder, TurnInput
+from src.contracts import A3Output, Action, CaseState, Domain, Priority, Stakeholder, StakeholderType, TurnInput
 from src.kb import SOURCE_REGISTRY
 from src.llm import LLMError, LLMOutputError, call_structured, load_prompt
 from src.report.checks import find_banned_phrases, find_personal_data
@@ -50,53 +50,79 @@ _LEGAL = re.compile(r"\b(injur\w*|authorit\w*|regulator\w*|notif\w*|personal\s+d
 
 
 # ---------------------------------------------------------------- what the LLM returns (a plan)
+# Session 4 (live API, Matteo): the API compiles this schema into a grammar and rejected the
+# first version as "too large" (31 optional + 15 nullable fields). So: EVERY field required,
+# NO nullable fields. "None / unchanged" is written as "" (text), [] (list) or "unchanged".
+# tests/test_a3_actions.py guards this offline.
+
+class PlanOption(BaseModel):
+    option: str
+    pros: str
+    cons: str
+    chosen: bool
+
+
+class PlanStakeholder(BaseModel):
+    name: str
+    type: StakeholderType
+    interest: str
+    impact: str
+    acme_contact: str  # "" = none
+
 
 class NewAction(BaseModel):
     title: str
     what_it_does: str
     owner: str
-    approver: Optional[str] = None
+    approver: str  # "" = none
     timing: str
     priority: Priority
-    focus_related: Optional[bool] = None
-    domains: list[Domain] = Field(default_factory=list)
-    options_considered: list[ActionOption] = Field(default_factory=list)
-    basis_source_ids: list[str] = Field(default_factory=list)
-    expected_effect: str = ""
+    focus_related: bool  # ignored (stored as null) when the case has no focus
+    domains: list[Domain]
+    options_considered: list[PlanOption]
+    basis_source_ids: list[str]
+    expected_effect: str
     # Usually "proposed". Another status only if the user reported it (decision 2026-11-23).
-    initial_status: Literal["proposed", "approved", "in_progress", "completed"] = "proposed"
-    result_evidence_source_ids: list[str] = Field(default_factory=list)
-    reason: str = Field(min_length=1)
+    initial_status: Literal["proposed", "approved", "in_progress", "completed"]
+    result_evidence_source_ids: list[str]
+    reason: str
 
 
 class ActionChange(BaseModel):
     action_id: str
-    reason: str = Field(min_length=1)
-    new_status: Optional[ActionStatus] = None
-    result_evidence_source_ids: list[str] = Field(default_factory=list)
-    # optional revisions (None = unchanged)
-    title: Optional[str] = None
-    what_it_does: Optional[str] = None
-    owner: Optional[str] = None
-    approver: Optional[str] = None
-    timing: Optional[str] = None
-    priority: Optional[Priority] = None
-    focus_related: Optional[bool] = None
-    domains: Optional[list[Domain]] = None
-    options_considered: Optional[list[ActionOption]] = None
-    basis_source_ids: Optional[list[str]] = None
-    expected_effect: Optional[str] = None
+    reason: str
+    new_status: Literal["unchanged", "proposed", "approved", "in_progress", "completed",
+                        "verified_effective", "verified_ineffective", "dropped"]
+    result_evidence_source_ids: list[str]  # [] = none added
+    # revisions: "" / [] / "unchanged" = keep the current value
+    title: str
+    what_it_does: str
+    owner: str
+    approver: str
+    timing: str
+    priority: Literal["unchanged", "P1", "P2", "P3"]
+    focus_related: Literal["unchanged", "true", "false"]
+    domains: list[Domain]
+    options_considered: list[PlanOption]
+    basis_source_ids: list[str]
+    expected_effect: str
 
 
 class A3Plan(BaseModel):
-    new_actions: list[NewAction] = Field(default_factory=list)
-    changes: list[ActionChange] = Field(default_factory=list)
-    stakeholders: list[Stakeholder] = Field(default_factory=list)
-    no_action_reasons: list[str] = Field(default_factory=list)
+    new_actions: list[NewAction]
+    changes: list[ActionChange]
+    stakeholders: list[PlanStakeholder]
+    no_action_reasons: list[str]
 
 
-_REVISABLE = ("title", "what_it_does", "owner", "approver", "timing", "priority", "focus_related",
-              "domains", "options_considered", "basis_source_ids", "expected_effect")
+_TEXT_FIELDS = ("title", "what_it_does", "owner", "approver", "timing", "expected_effect")
+_LIST_FIELDS = ("domains", "options_considered", "basis_source_ids")
+
+
+def contract_stakeholders(plan: A3Plan) -> list[Stakeholder]:
+    """Plan stakeholders -> contract Stakeholder ("" contact -> None)."""
+    return [Stakeholder(name=s.name, type=s.type, interest=s.interest, impact=s.impact,
+                        acme_contact=s.acme_contact.strip() or None) for s in plan.stakeholders]
 
 
 # ---------------------------------------------------------------- code builds the actions
@@ -114,9 +140,13 @@ def assemble(plan: A3Plan, state: CaseState) -> tuple[list[Action], list[str]]:
     n = _next_number(state)
 
     for i, new in enumerate(plan.new_actions, start=1):
+        if not new.reason.strip():
+            problems.append(f"new action {i} ('{new.title}') needs a reason")
+            continue
         data = new.model_dump(exclude={"initial_status", "reason"})
         data.update(
             action_id=f"ACT-{n:03d}",
+            approver=new.approver.strip() or None,
             status=new.initial_status,
             status_history=[{"version": v, "from": None, "to": new.initial_status, "reason": new.reason}],
         )
@@ -138,15 +168,25 @@ def assemble(plan: A3Plan, state: CaseState) -> tuple[list[Action], list[str]]:
             problems.append(f"{ch.action_id} is changed twice; merge the changes into one")
             continue
         seen.add(ch.action_id)
+        if not ch.reason.strip():
+            problems.append(f"change to {ch.action_id} needs a reason")
+            continue
         data = old.model_dump(mode="json")
-        for key in _REVISABLE:
+        for key in _TEXT_FIELDS:  # "" = unchanged
+            if getattr(ch, key).strip():
+                data[key] = getattr(ch, key).strip()
+        for key in _LIST_FIELDS:  # [] = unchanged
             value = getattr(ch, key)
-            if value is not None:
+            if value:
                 data[key] = [o.model_dump() for o in value] if key == "options_considered" else value
+        if ch.priority != "unchanged":
+            data["priority"] = ch.priority
+        if ch.focus_related != "unchanged":
+            data["focus_related"] = ch.focus_related == "true"
         if not state.focus:
             data["focus_related"] = None
         data["result_evidence_source_ids"] = list(dict.fromkeys(data["result_evidence_source_ids"] + ch.result_evidence_source_ids))
-        if ch.new_status and ch.new_status != old.status:
+        if ch.new_status != "unchanged" and ch.new_status != old.status:
             data["status"] = ch.new_status
             data["status_history"] = data["status_history"] + [
                 {"version": v, "from": old.status, "to": ch.new_status, "reason": ch.reason}]
@@ -163,7 +203,7 @@ def _short(e: ValidationError) -> str:
 
 # ---------------------------------------------------------------- checks
 
-def _texts(actions: list[Action], stakeholders: list[Stakeholder]) -> dict[str, str]:
+def _texts(actions: list[Action], stakeholders: list[PlanStakeholder]) -> dict[str, str]:
     texts: dict[str, str] = {}
     for a in actions:
         for key in ("title", "what_it_does", "expected_effect"):
@@ -226,7 +266,7 @@ def hard_problems(plan: A3Plan, state: CaseState, actions: list[Action], assembl
             problems.append(f"new action '{a.title}' is already in the register as {existing_titles[_norm(a.title)]}; "
                             "put the update in `changes` instead")
     for s in plan.stakeholders:
-        if s.acme_contact and not _is_staff(s.acme_contact):
+        if s.acme_contact.strip() and not _is_staff(s.acme_contact):
             problems.append(f"stakeholder '{s.name}': acme_contact '{s.acme_contact}' is not on the ACME contact sheet (KB-02)")
     if state.focus:
         changed = {a.action_id: a for a in actions}
@@ -316,7 +356,7 @@ def plan_actions(state: CaseState, turn: TurnInput | None = None, *, client=None
 
     actions, assembly = assemble(plan, state)
     warnings = hard_problems(plan, state, actions, assembly, turn) + soft_problems(plan, state, actions)
-    return A3Output(actions=actions, stakeholders=plan.stakeholders), warnings
+    return A3Output(actions=actions, stakeholders=contract_stakeholders(plan)), warnings
 
 
 def run(state: CaseState, turn: TurnInput | None = None, *, client=None) -> A3Output:

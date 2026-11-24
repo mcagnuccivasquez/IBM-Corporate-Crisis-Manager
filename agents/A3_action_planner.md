@@ -23,15 +23,18 @@ A3 drafts and recommends. It never claims anything was done unless the user said
 **How the records are built (session 3 design):** the LLM returns a short *plan*, and **code** builds the `Action` records:
 ```json
 {
-  "new_actions": [ { "title": "...", "what_it_does": "...", "owner": "...", "approver": null, "timing": "within 24h", "priority": "P1",
+  "new_actions": [ { "title": "...", "what_it_does": "...", "owner": "...", "approver": "", "timing": "within 24h", "priority": "P1",
                      "focus_related": true, "domains": ["economic"], "options_considered": [ ... ], "basis_source_ids": ["KB-12"],
                      "expected_effect": "...", "initial_status": "proposed", "result_evidence_source_ids": [], "reason": "..." } ],
   "changes":     [ { "action_id": "ACT-001", "new_status": "completed", "reason": "User: hold done", "result_evidence_source_ids": ["U-03"],
-                     "priority": null, "what_it_does": null } ],
-  "stakeholders": [ /* full current map */ ],
+                     "title": "", "what_it_does": "", "owner": "", "approver": "", "timing": "", "priority": "unchanged",
+                     "focus_related": "unchanged", "domains": [], "options_considered": [], "basis_source_ids": [], "expected_effect": "" } ],
+  "stakeholders": [ { "name": "...", "type": "external", "interest": "...", "impact": "...", "acme_contact": "" } ],
   "no_action_reasons": [ "economic: no action, because …" ]
 }
 ```
+**Plan format rule (session 4, live API):** the API compiles the plan schema into a grammar and rejected the first version as too large (31 optional + 15 nullable fields). So every plan field is **required** and **nothing is nullable**; "none / unchanged" is written as `""` (text), `[]` (list) or `"unchanged"` (`new_status`, `priority`, `focus_related` = `"true"`/`"false"`/`"unchanged"`). Stakeholders and options use plan-local models (`PlanStakeholder` with `acme_contact` `""` = none, `PlanOption`), converted to the contract in code. An offline test guards this.
+
 Code assigns new IDs (continuing the numbering, never reused), writes a `status_history` entry for this version for every status change (with the reason), keeps all earlier entries, and keeps `status` equal to the last entry. A new action starts as `proposed`, or at the status the **user** reported (approved / in_progress / completed, never verified). Without a case focus, `focus_related` is always `null` (D-013).
 
 ## 4. Planning rules

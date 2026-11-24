@@ -25,7 +25,8 @@
   <div class="band-right">
     <div class="risk-badge risk-{{ risk_css(s.risk.level) }}">
       <span class="risk-label">Risk level</span>
-      <span class="risk-value"><span class="risk-prev">{{ s.risk.previous_level or "—" }}</span> → {{ (s.risk.level or NR) | upper }}</span>
+      {# session 4 (Matteo): "previous → current" only when there is a previous level (v2+) #}
+      <span class="risk-value">{% if s.risk.previous_level %}<span class="risk-prev">{{ s.risk.previous_level }}</span> → {% endif %}{{ (s.risk.level or NR) | upper }}</span>
     </div>
     <div class="conf-badge">Evidence confidence: <strong>{{ (s.risk.evidence_confidence or NR) | capitalize }}</strong></div>
   </div>
@@ -117,7 +118,7 @@
 <section>
   <h2>3. Risk and reasons</h2>
   <p>Overall risk: <span class="risk-inline risk-{{ risk_css(s.risk.level) }}">{{ s.risk.level or NR }}</span>
-     (previous version: {{ s.risk.previous_level or "—" }}).
+     {% if s.risk.previous_level %}(previous version: {{ s.risk.previous_level }}){% else %}(initial assessment){% endif %}.
      Evidence confidence, rated separately: <strong>{{ (s.risk.evidence_confidence or NR) | capitalize }}</strong>.</p>
   <table class="keep">
     <thead><tr><th class="w-md">Domain</th><th class="w-xs">Severity</th><th class="w-xs">Likelihood</th><th class="w-xs">Score</th><th>Why</th><th class="w-xs">Floors</th></tr></thead>
@@ -241,7 +242,7 @@
 <section>
   <h2>8. Changes since {% if is_initial %}previous version{% else %}v{{ version - 1 }}{% endif %} and open questions</h2>
   {% if is_initial %}<p><strong>Initial assessment.</strong> There is no previous version.</p>{% endif %}
-  <p><strong>Risk:</strong> {{ s.risk.previous_level or "—" }} → {{ s.risk.level or NR }}
+  <p><strong>Risk:</strong> {% if s.risk.previous_level %}{{ s.risk.previous_level }} → {% endif %}{{ s.risk.level or NR }}
     {% if not is_initial and s.risk.previous_level == s.risk.level %}(unchanged){% endif %}</p>
   {% set ch_text = narrative.changes_summary or (changes.summary if changes else None) %}
   {% if ch_text or not is_initial %}<p>{{ (ch_text or NR) | linkify }}</p>{% endif %}

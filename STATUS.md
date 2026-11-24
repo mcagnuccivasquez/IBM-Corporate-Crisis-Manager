@@ -15,6 +15,9 @@ _Last updated: 2026-11-24 13:35 · by: Alibek (a4-prepass-nonblocking session)_
 | A0 Orchestrator (`pipeline.py`, `app.py`, `diff.py`) + integration | A0 | **Matteo** | in progress | App runs real A0, A1, A2, risk, A3, A5 + PDF (A4 still stub). Next: first live S1 run, read cost in `trace.jsonl`; demo prep |
 | A1 Evidence Analyst | A1 | **Giacomo** | done (PR #8) | Follow-up PR: attachment paths → `Source.file`; register cited KB sources with `kb_source` |
 | A2a/b/c Impact assessors + `risk.py` | A2 | **Junda** | done (PR #6) | Check live S1 scores against the scenario's expected levels |
+| A3 Action Planner | A3 | **Serdar** | in review (PR #13) | Live-API schema fix on `serdar/a3-schema-demo-fixes` (all plan fields required, no nullable; offline guard test). Next: Matteo merges + one live A3 call; prompt fixes 4–5 |
+| A4 Critic & Outlook | A4 | **Alibek** | not started | Starts 25 Nov; consider reusing A5's `check_other_agents` as a free first pass; fix S1 using ACT-001 for two actions |
+| A5 Report Writer (template + PDF) | A5 | **Serdar** | in review (PR #13) | v1 badge fixed, "confirmed" check now hard, checks.py merge damage repaired (same fix PR). Next: follow-up PR for number check (skip dates/IDs) + full names |
 | A3 Action Planner | A3 | **Serdar** | done (PR #10) | D-015 warnings field approved (implemented by Matteo); live run |
 | A4 Critic & Outlook | A4 | **Alibek** | in review (PR ready) | Pre-pass hits → non-blocking (LLM decides); false-alarm prompt added; docstring fixed; basis_source_ids→reasons text; dedup instruction; 18/18 tests pass; needs live API test from Matteo |
 | A5 Report Writer (template + PDF) | A5 | **Serdar** | done (PR #2) | Follow-up PR: v1 badge "— → HIGH" (before the demo), number check, full names |
@@ -49,6 +52,7 @@ Status values: not started · in progress · in review (PR open) · done · bloc
 3. Who presents at Playback 2, and who owns the demo script?
 
 ## Recent sessions (newest first, keep 10)
+- 2026-11-24 · Serdar · demo fixes: A3 live-API schema fix + guard test, v1 badge, "confirmed" check hard, checks.py merge damage repaired; 342 tests → `sessions/2026-11-24_serdar_demo-fixes.md`
 - 2026-11-24 · Alibek · A4 pre-pass non-blocking: pre-pass hits→non-blocking, false-alarm prompt, docstring fix, basis_source_ids fix, dedup instruction, ACT-001 scenario rename → `sessions/2026-11-24_Alibek_a4-prepass-nonblocking.md`
 - 2026-11-23 · Alibek · A4 checks integration: `a4_critic.py`, prompt, 18 tests, Appendix C pass condition in all 7 expected.md files → `sessions/2026-11-23_Alibek_a4-checks-integration.md`
 - 2026-11-23 · Matteo · reviews + D-015: merged PR #8 (A1), #2 (A5), #10 (A3); `A3Output.warnings` → non-blocking QA notes; app runs all real agents except A4; 332 tests → `sessions/2026-11-23_matteo_reviews-d015.md`
@@ -60,4 +64,3 @@ Status values: not started · in progress · in review (PR open) · done · bloc
 - 2026-11-22 · Junda · A2 LLM wiring & contract migration: merged P0 foundations, migrated schema, wired call_structured, 120 tests → `sessions/2026-11-22_junda_a2-llm-wiring.md`
 - 2026-11-21 · Serdar · A5 session 2: PR #2 fitted to the pipeline (Matteo's 4 changes), weaknesses fixed, AI fact-check + safety net, event-loop fix, A5 spec updated; 6 items for Matteo → `sessions/2026-11-21_serdar_a5-pipeline-and-fixes.md`
 - 2026-11-21 · Alibek · A4 QA lead: fixture state_v1_S1.json + all S1–S3 scenario files → `sessions/2026-11-21_Alibek_a4-critic-outlook-and-scenarios.md`
-- 2026-11-21 · Matteo · Streamlit chat UI (`app.py`): cases, versions + PDF downloads, risk badge, attachments, live agent progress; localhost-only config → `sessions/2026-11-21_matteo_app-ui.md`
