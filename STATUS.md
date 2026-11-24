@@ -18,7 +18,7 @@ _Last updated: 2026-11-25 16:10 · by: Alibek (a4-dedup-confirmed-candidates ses
 | A3 Action Planner | A3 | **Serdar** | done (PR #10) | D-015 warnings field approved (implemented by Matteo); live run |
 | A4 Critic & Outlook | A4 | **Alibek** | in review (PR ready) | PR #12 merged (Matteo). Follow-up: prompt dedup fix, merge dedup by (target, item_id), INT-4 test; 19/19 tests pass; waiting for live S1 API run from Matteo |
 | A5 Report Writer (template + PDF) | A5 | **Serdar** | done (PR #2) | Follow-up PR: v1 badge "— → HIGH" (before the demo), number check, full names |
-| Test scenarios S1–S3 + fixture states (QA lead) | A4 | **Alibek** | done (PR #7) | Fix S1 action IDs (see A4 row) |
+| Test scenarios S1–S3 + fixture states (QA lead) | A4 | **Alibek** | done (PR #7) | S1 action IDs fixed (ACT-004 rename, turns 3–4); S2–S3 scenarios complete |
 
 _Assignment proposed by the director on 2026-11-21. Swap freely, but update this table._
 Status values: not started · in progress · in review (PR open) · done · blocked
