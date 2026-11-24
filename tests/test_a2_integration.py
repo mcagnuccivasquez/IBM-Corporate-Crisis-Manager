@@ -410,3 +410,105 @@ class TestDeterminism:
             risk = _risk_from_all(s)
             levels.append(risk.level)
         assert len(set(levels)) == 1, f"Non-deterministic levels across runs: {levels}"
+
+
+# ---------------------------------------------------------------------------
+# 9. source_ids check: C-xxx claim IDs must not appear in source_ids
+# ---------------------------------------------------------------------------
+
+class TestSourceIdsCheckLambda:
+    """
+    Verify the _check_source_ids logic that is passed as check= to call_structured.
+    We reconstruct an equivalent check inline so the test has no LLM dependency.
+    The logic mirrors a2_impact.run() exactly.
+    """
+
+    def _make_check(self, sources: list[Source]):
+        """Return a check function equivalent to the one built inside run()."""
+        from src.kb import unknown_kb_ids
+
+        valid_source_ids = {s.source_id for s in sources}
+
+        def _check(r: DomainImpact) -> list[str]:
+            problems: list[str] = []
+            all_sids = [i for item in r.impacts for i in item.source_ids]
+            for sid in all_sids:
+                if not (sid.startswith("KB-") or sid.startswith("U-")):
+                    problems.append(
+                        f"source_ids may only contain sources (U-xx, KB-xx); not a source: {sid}"
+                    )
+                elif sid.startswith("U-") and sid not in valid_source_ids:
+                    problems.append(
+                        f"source_ids references unknown U-xx source: {sid}"
+                    )
+            problems.extend(
+                f"unknown KB id {sid}"
+                for sid in unknown_kb_ids([s for s in all_sids if s.startswith("KB-")])
+            )
+            return problems
+
+        return _check
+
+    def _make_impact(self, source_ids: list[str]) -> DomainImpact:
+        from src.contracts import ImpactItem
+        return DomainImpact(
+            severity=2,
+            likelihood=2,
+            severity_reason="test",
+            likelihood_reason="test",
+            evidence_confidence="low",
+            impacts=[ImpactItem(
+                description="test impact",
+                if_unaddressed="test",
+                timeframe="7d",
+                source_ids=source_ids,
+                basis="company_data",
+            )],
+        )
+
+    def test_claim_id_in_source_ids_is_flagged(self):
+        """C-001 in source_ids must be caught and produce a problem string."""
+        sources = [_source("U-01")]
+        check = self._make_check(sources)
+        impact = self._make_impact(["C-001", "U-01"])
+        problems = check(impact)
+        assert any("not a source: C-001" in p for p in problems), (
+            f"Expected claim-ID problem not found in: {problems}"
+        )
+
+    def test_valid_source_ids_pass(self):
+        """U-01 and KB-05 are valid; check must return no problems."""
+        sources = [_source("U-01")]
+        check = self._make_check(sources)
+        impact = self._make_impact(["U-01", "KB-05"])
+        problems = check(impact)
+        assert problems == [], f"Unexpected problems: {problems}"
+
+    def test_unknown_u_source_is_flagged(self):
+        """A U-xx ID not in state.sources must be flagged."""
+        sources = [_source("U-01")]
+        check = self._make_check(sources)
+        impact = self._make_impact(["U-99"])
+        problems = check(impact)
+        assert any("unknown U-xx source: U-99" in p for p in problems), (
+            f"Expected unknown-source problem not found in: {problems}"
+        )
+
+    def test_unknown_kb_id_is_flagged(self):
+        """A KB-xx ID outside the registry (KB-99) must be flagged."""
+        sources = []
+        check = self._make_check(sources)
+        impact = self._make_impact(["KB-99"])
+        problems = check(impact)
+        assert any("unknown KB id KB-99" in p for p in problems), (
+            f"Expected unknown-KB problem not found in: {problems}"
+        )
+
+    def test_multiple_bad_ids_all_reported(self):
+        """C-001 and C-004 both in source_ids → both flagged."""
+        sources = [_source("U-01")]
+        check = self._make_check(sources)
+        impact = self._make_impact(["C-001", "C-004", "U-01"])
+        problems = check(impact)
+        bad_ids = [p for p in problems if "not a source:" in p]
+        assert len(bad_ids) == 2, f"Expected 2 problems, got: {problems}"

@@ -14,7 +14,7 @@ _Last updated: 2026-11-21 18:05 · by: Matteo (p0-foundations session)_
 | Foundations (`contracts.py`, `llm.py`, `kb.py`, KB extraction) | A0 | **Matteo** | in review (branch `matteo/p0-foundations`) | Open PR → main and merge; live API verified (cache hit, $0.03) |
 | A0 Orchestrator (`pipeline.py`, `app.py`, `diff.py`) + integration | A0 | **Matteo** | in review (branch `matteo/app-ui`) | `pipeline.py`, `diff.py`, stubs, `app.py` done (UI runs end to end on stubs: `.\.venv\Scripts\python.exe -m streamlit run src/app.py`); next: integrate teammates' agents, first live S1 run |
 | A1 Evidence Analyst | A1 | **Giacomo** | not started | Prompt + output model (needed for Playback 2) |
-| A2a/b/c Impact assessors + `risk.py` | A2 | **Junda** | in review (PR open) | All 3 director fixes applied ✅ · no _STUB_MODE ✅ · F4 names justification ✅ · Legal/regulatory label ✅ · 140 tests passing; needs end-to-end test once A1 (Giacomo) lands |
+| A2a/b/c Impact assessors + `risk.py` | A2 | **Junda** | in review (PR open) | Fix 1 done: source_ids check= lambda + prompt fix, 145 tests ✅; Fix 2 (economic S=3 vs S=2) → method question pending Matteo + Alibek; needs end-to-end rerun once A1 lands |
 | A5 Report Writer (template + PDF) | A5 | **Serdar** | not started | HTML template + PDF from a fixture state (needed for Playback 2) |
 | A3 Action Planner | A3 | **Serdar** | not started | After Playback 2 (25–28 Nov) |
 | A4 Critic & Outlook | A4 | **Alibek** | not started | After Playback 2 (25–28 Nov) |
@@ -49,6 +49,7 @@ Status values: not started · in progress · in review (PR open) · done · bloc
 3. Who presents at Playback 2, and who owns the demo script?
 
 ## Recent sessions (newest first, keep 10)
+- 2026-11-23 · Junda · A2 S1 live-run fixes: source_ids check= lambda + prompt fix (145 tests ✅); economic S=3 vs S=2 flagged for Matteo → `sessions/2026-11-23_junda_a2-s1-fixes.md`
 - 2026-11-22 · Junda · A2 pre-merge director review: verified 3 fixes (no _STUB_MODE, F4 names justification, Legal/regulatory), 140 tests pass, PR open → `sessions/2026-11-22_junda_a2-pre-merge-review.md`
 - 2026-11-22 · Junda · A2 LLM wiring & contract migration: merged P0 foundations, migrated schema, wired call_structured, 120 tests → `sessions/2026-11-22_junda_a2-llm-wiring.md`
 - 2026-11-21 · Matteo · Streamlit chat UI (`app.py`): cases, versions + PDF downloads, risk badge, attachments, live agent progress; localhost-only config → `sessions/2026-11-21_matteo_app-ui.md`

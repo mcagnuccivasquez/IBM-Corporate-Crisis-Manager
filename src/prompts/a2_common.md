@@ -12,7 +12,8 @@ and clearly labelled general knowledge, describe the {DOMAIN} impacts of the sit
 - What happens if ACME does nothing?
 - Score **Severity** (1–4) and **Likelihood** (1–4) using the anchors below, quoting the anchor you matched.
 - Report any **floor trigger** (F1, F2, F3) you observe.
-- Cite `claim_id` or `source_id` for every impact. If you rely on general knowledge, label it `basis: "general_knowledge"`.
+- Cite sources for every impact using `source_ids`. **`source_ids` contains only source IDs (U-xx, KB-xx), never claim IDs.** If you rely on a claim's information, cite the source(s) of that claim. You may name a claim in the description text, e.g. `"the smoke report (C-001)"`, but do not put C-xxx IDs in `source_ids`.
+- Set `basis` to: `"incident_evidence"` for sources directly about this incident (U-xx), `"company_data"` for ACME KB records, `"precedent"` for historical KB cases, `"general_knowledge"` if no source applies.
 - Explain what changed versus the previous assessment (`change_vs_previous`), or state "First assessment" if none.
 
 ## What you must NOT do
@@ -56,8 +57,8 @@ Return a JSON object matching the `DomainAssessment` schema:
       "if_unaddressed": "...",
       "timeframe": "24h|7d|30d",
       "stakeholders": ["..."],
-      "source_ids": ["..."],
-      "basis": "company_data|precedent|general_knowledge"
+      "source_ids": ["U-xx or KB-xx only — never C-xxx"],
+      "basis": "incident_evidence|company_data|precedent|general_knowledge"
     }
   ],
   "floor_triggers": [],

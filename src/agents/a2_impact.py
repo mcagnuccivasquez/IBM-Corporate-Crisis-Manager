@@ -43,6 +43,7 @@ from src.contracts import (
     TurnInput,
 )
 
+from src.kb import unknown_kb_ids
 from src.llm import call_structured  # type: ignore[import]
 
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
@@ -72,6 +73,26 @@ def run(state: CaseState, turn: TurnInput, domain: Domain) -> DomainImpact:
     system_prompt = _build_prompt(domain, prev_domain, state.focus)
     user_content = _build_user_content(domain, active_claims, state.sources, prev_domain)
 
+    valid_source_ids = {s.source_id for s in state.sources}
+
+    def _check_source_ids(r: DomainImpact) -> list[str]:
+        problems: list[str] = []
+        all_sids = [i for item in r.impacts for i in item.source_ids]
+        for sid in all_sids:
+            if not (sid.startswith("KB-") or sid.startswith("U-")):
+                problems.append(
+                    f"source_ids may only contain sources (U-xx, KB-xx); not a source: {sid}"
+                )
+            elif sid.startswith("U-") and sid not in valid_source_ids:
+                problems.append(
+                    f"source_ids references unknown U-xx source: {sid}"
+                )
+        problems.extend(
+            f"unknown KB id {sid}"
+            for sid in unknown_kb_ids([s for s in all_sids if s.startswith("KB-")])
+        )
+        return problems
+
     result: DomainImpact = call_structured(
         agent=f"A2{_domain_agent_suffix(domain)}",
         system_prompt=system_prompt,
@@ -79,6 +100,7 @@ def run(state: CaseState, turn: TurnInput, domain: Domain) -> DomainImpact:
         output_model=DomainImpact,
         effort="high",
         case_id=state.case_id,
+        check=_check_source_ids,
     )
     # Defensively enforce the score (DomainImpact validator also does this)
     result.score = result.severity * result.likelihood
