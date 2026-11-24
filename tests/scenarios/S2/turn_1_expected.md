@@ -82,3 +82,22 @@ Final level: **High**.
 - Risk set to Medium because "probably reused passwords" (T9 violation, blocking)
 - SC-219 cited as evidence this is contained → blocking, T9
 - GDPR notification not flagged to Legal → blocking, T12
+
+---
+
+## Appendix C safety net expectation
+
+`report.narrative_warnings = []` (empty list)
+
+**What must NOT appear in Appendix C:**
+
+| Category | Why it must not fire |
+|---|---|
+| Banned phrase "password change proves nothing was viewed" | Action text for the customer acknowledgement must NOT state that a password reset proves no recordings were accessed (KB-09) — the action must only say "do not make that claim", not make the claim itself |
+| Banned phrase "authorities contacted" | No action claims GDPR authority has been notified — the action is to brief Legal/DPO to assess the obligation |
+| Personal data (email, @handle, phone) | Customers are referenced by count ("3 customers") not by name, email, or handle in action/impact/stakeholder texts |
+| Blame wording | No action or impact text suggests customers caused the breach by reusing passwords — that is an open investigative question at this stage |
+
+**High-risk area for this scenario:** S2 involves customer account and camera-recording data. Any slip of a customer email, `@handle`, or account reference into an action's `what_it_does` or a stakeholder's `interest` field would trip the personal-data check. A4's pre-pass catches this as a blocking issue.
+
+**T11 trap planted in this turn:** None by default. If a test variation deliberately adds "password change confirms nothing was viewed" to an action's `expected_effect`, A4's pre-pass catches it as a blocking `qa.issues` entry before the PDF.
