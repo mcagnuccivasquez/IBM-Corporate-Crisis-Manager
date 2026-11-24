@@ -219,6 +219,8 @@ def test_customer_names_are_caught(sentence, found):
     "Owner: Tom Weber. Approver: E. Rossi.",          # ACME staff (KB-02) are not personal data
     "Contact tom.weber@acme.example for returns.",     # ACME's own address
     "Option A. Then hold both batches.",               # sentence boundary, not a name
+    "Hold batches A and B. Covers both batches.",      # session 4 regression: a merge had undone this fix
+    "Batch B. Quality tests it next week.",
 ])
 def test_staff_and_sentence_starts_are_not_flagged(sentence):
     assert a5_report.find_personal_data(dict(GOOD, situation=sentence)) == []
@@ -299,6 +301,25 @@ def test_hard_problems_share_one_retry(state):
     assert len(client.calls) == 2
     feedback = _retry_feedback(client)
     assert "12,500" in feedback and "C-899" in feedback and "@someone" in feedback
+    assert narrative == GOOD and warnings == []
+
+
+def test_banned_phrase_rules_are_unique():
+    """Session 4 regression: a merge duplicated a rule, giving double warnings."""
+    from src.report import checks
+    labels = [rule[0] for rule in checks.BANNED_PHRASES]
+    assert len(labels) == len(set(labels))
+    s = {"claims": [], "sources": []}
+    assert len(checks.find_banned_phrases({"x": "A password change proves nothing was viewed."}, s)) == 1
+
+
+def test_overstated_claim_is_now_hard_and_retried(state):
+    """Session 4 (Matteo's live run): 'Confirmed: …' about an unconfirmed claim stayed in the PDF
+    because the check was soft. Now it triggers the one retry."""
+    bad = dict(GOOD, situation="Confirmed: the smoke incident happened [C-001].")
+    client = FakeClient(bad, GOOD)
+    narrative, warnings = a5_report.write_narrative(state, client=client, run_fact_check=False)
+    assert len(client.calls) == 2 and "C-001" in _retry_feedback(client)
     assert narrative == GOOD and warnings == []
 
 

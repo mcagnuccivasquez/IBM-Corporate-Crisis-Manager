@@ -4,12 +4,11 @@ renderer (safety net on other agents' texts, warnings only).
 Two kinds of check (agreed with Serdar, 2026-11-21):
 - HARD (reliable): invented numbers (digits or words), IDs that the case data never
   mentions, banned phrases from ACME's own files (KB-03, KB-04, KB-09, KB-10), personal data
-  mentions, banned phrases from ACME's own files (KB-03, KB-09, KB-10), personal data
-  (emails, @handles, phones, "R. Dubois" / "Mr X" style names). On the A5 narrative they
-  trigger the one retry in llm.call_structured; what is left becomes a warning.
-- SOFT (heuristics, may misfire): "confirmed" said about a non-confirmed claim, a risk
-  level that is not in the data, wording that may blame a customer, word limits.
-  Warning only.
+  (emails, @handles, phones, "R. Dubois" / "Mr X" style names), and (since session 4,
+  Matteo's live run) "confirmed" said about a claim that is not confirmed. On the A5
+  narrative they trigger the one retry in llm.call_structured; what is left becomes a warning.
+- SOFT (heuristics, may misfire): a risk level that is not in the data, wording that may
+  blame a customer, word limits. Warning only.
 
 Known limits (documented, not hidden): a real number used for the wrong thing passes
 these checks (the A5 AI fact-check pass looks for that); full names like "Rachel Dubois"
@@ -204,10 +203,6 @@ BANNED_PHRASES = [
      r"|\bno\s+(?:data\s+|security\s+)?breach\s+(?:has\s+|had\s+)?(?:occurred|happened|taken\s+place|took\s+place)\b"
      r"|\bno\s+(?:personal\s+|customer\s+)?(?:data|recordings?)\s+(?:was|were|has\s+been|have\s+been)\s+(?:accessed|exposed|compromised|leaked)\b",
      "KB-04, scenario S2", None),
-    ("password change proves no recording was viewed",
-     r"\bpassword\s+(?:change|reset)\s+(?:proves|shows|confirms|ensures|guarantees|means)\b"
-     r"|\bno\s+(?:earlier\s+)?recordings?\s+(?:was|were|has\s+been|have\s+been)\s+(?:viewed|accessed|seen)\b",
-     "KB-09", None),
 ]
 
 
@@ -244,7 +239,6 @@ _INITIAL_NAME = re.compile(
     r"(?<!\bbatch )(?<!\bbatches )(?<!\boption )(?<!\boptions )(?<!\bplan )(?<!\bphase )(?<!\btype )"
     r"(?<!\bmodel )(?<!\bclass )(?<!\bgrade )(?<!\bpart )(?<!\bunit )(?<!\band )(?<!\bor )(?<!\bvs )"
     r"\b[A-Z]\.\s?([A-Z][a-z]{2,})\b")
-_INITIAL_NAME = re.compile(r"\b[A-Z]\.\s?([A-Z][a-z]{2,})\b")
 _NOT_A_SURNAME = {"The", "This", "That", "These", "Those", "Then", "There", "It", "Its", "In", "On", "At",
                   "As", "An", "And", "But", "If", "No", "Not", "We", "All", "Any", "Each", "For", "From",
                   "Risk", "Quality", "Customer", "Care", "Legal", "Security", "Finance", "Supply"}
@@ -283,7 +277,7 @@ def find_overstated_claims(texts: dict, state: dict) -> list[str]:
                 continue
             if any(not _negated(sentence, m.start()) for m in _CERTAIN.finditer(sentence)):
                 problems.append(f"{where}: calls {', '.join(cited)} confirmed/proven, but its status is "
-                                f"{', '.join(sorted({status[i] for i in cited}))}{SOFT_SUFFIX}")
+                                f"{', '.join(sorted({status[i] for i in cited}))}")
     return problems
 
 
@@ -344,12 +338,13 @@ def hard_problems(narrative: dict, state: dict) -> list[str]:
                  for f, i in find_unknown_ids(narrative, state).items()]
     problems += find_banned_phrases(narrative, state)
     problems += find_personal_data(narrative)
+    # session 4 (Matteo, live run): moved from soft to hard so the one retry can fix it
+    problems += find_overstated_claims(narrative, state)
     return problems
 
 
 def soft_problems(narrative: dict, state: dict) -> list[str]:
-    return (find_overstated_claims(narrative, state)
-            + find_unknown_risk_levels(narrative, state)
+    return (find_unknown_risk_levels(narrative, state)
             + find_blame(narrative)
             + check_word_limits(narrative))
 

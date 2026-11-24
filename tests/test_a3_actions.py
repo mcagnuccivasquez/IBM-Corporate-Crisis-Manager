@@ -46,12 +46,47 @@ HOLD = {
 }
 FOCUS_ONLY = [{"action_id": i, "reason": "focus evaluated", "focus_related": True} for i in ("ACT-002", "ACT-003")]
 
+# Session 4: the plan schema has every field required and nothing nullable (live API limit).
+# Tests write short plans; full() fills the "none / unchanged" values like the real model must.
+_NEW_DEFAULTS = {"approver": "", "focus_related": False, "domains": [], "options_considered": [], "basis_source_ids": [],
+                 "expected_effect": "", "initial_status": "proposed", "result_evidence_source_ids": []}
+_CHANGE_DEFAULTS = {"new_status": "unchanged", "result_evidence_source_ids": [], "title": "", "what_it_does": "",
+                    "owner": "", "approver": "", "timing": "", "priority": "unchanged", "focus_related": "unchanged",
+                    "domains": [], "options_considered": [], "basis_source_ids": [], "expected_effect": ""}
+
+
+def _full_new(a):
+    d = {**_NEW_DEFAULTS, **a}
+    d["approver"] = d["approver"] or ""
+    d["focus_related"] = bool(d["focus_related"])
+    return d
+
+
+def _full_change(c):
+    d = {**_CHANGE_DEFAULTS, **c}
+    if isinstance(d["focus_related"], bool) or d["focus_related"] is None:
+        d["focus_related"] = {True: "true", False: "false", None: "unchanged"}[d["focus_related"]]
+    d["new_status"] = d["new_status"] or "unchanged"
+    return d
+
+
+def _full_stakeholder(s):
+    return {"name": s["name"], "type": s["type"], "interest": s.get("interest", ""), "impact": s.get("impact", ""),
+            "acme_contact": s.get("acme_contact") or ""}
+
+
+def full(p):
+    return {"new_actions": [_full_new(a) for a in p.get("new_actions", [])],
+            "changes": [_full_change(c) for c in p.get("changes", [])],
+            "stakeholders": [_full_stakeholder(s) for s in p.get("stakeholders", [])],
+            "no_action_reasons": list(p.get("no_action_reasons", []))}
+
 
 def plan(new=(), changes=(), stakeholders=None, no_action=()):
     s = json.loads(FIXTURE.read_text(encoding="utf-8"))
-    return {"new_actions": list(new), "changes": list(changes),
-            "stakeholders": s["stakeholders"] if stakeholders is None else stakeholders,
-            "no_action_reasons": list(no_action)}
+    return full({"new_actions": list(new), "changes": list(changes),
+                 "stakeholders": s["stakeholders"] if stakeholders is None else stakeholders,
+                 "no_action_reasons": list(no_action)})
 
 
 GOOD = plan(new=[HOLD], changes=[
@@ -80,7 +115,7 @@ class FakeClient:
         out = self.outputs.pop(0)
         if isinstance(out, Exception):
             raise out
-        response = _response(out if isinstance(out, str) else json.dumps(out))
+        response = _response(out if isinstance(out, str) else json.dumps(full(out)))
 
         class _Ctx:
             def __enter__(self_inner):
@@ -109,7 +144,7 @@ def state():
 
 
 def build(p, state):
-    parsed = a3.A3Plan.model_validate(p)
+    parsed = a3.A3Plan.model_validate(full(p))
     actions, problems = a3.assemble(parsed, state)
     return parsed, actions, problems
 
@@ -128,6 +163,65 @@ def soft(p, state):
 
 def test_plan_schema_is_accepted_by_the_api():
     assert set(anthropic.transform_schema(a3.A3Plan)["properties"]) == {"new_actions", "changes", "stakeholders", "no_action_reasons"}
+
+
+def _schema_nodes(node, path="root"):
+    if isinstance(node, dict):
+        yield path, node
+        for k, v in node.items():
+            yield from _schema_nodes(v, f"{path}/{k}")
+    elif isinstance(node, list):
+        for i, v in enumerate(node):
+            yield from _schema_nodes(v, f"{path}[{i}]")
+
+
+def test_plan_schema_stays_small_enough_for_the_live_api():
+    """Session 4 guard (Matteo): the live API rejected A3Plan as 'compiled grammar is too large'.
+    Accepted shape: every object lists ALL its properties as required, and nothing is nullable."""
+    schema = anthropic.transform_schema(a3.A3Plan)
+    problems = []
+    for path, node in _schema_nodes(schema):
+        if "properties" in node and set(node.get("required", [])) != set(node["properties"]):
+            problems.append(f"{path}: optional properties {sorted(set(node['properties']) - set(node.get('required', [])))}")
+        if any(isinstance(alt, dict) and alt.get("type") == "null" for alt in node.get("anyOf", [])):
+            problems.append(f"{path}: nullable (anyOf null)")
+        if isinstance(node.get("type"), list) and "null" in node["type"]:
+            problems.append(f"{path}: nullable (type list)")
+    assert problems == []
+
+
+def test_unchanged_sentinels_keep_the_action_as_it_is(state):
+    """'' / [] / 'unchanged' in a change mean 'keep the current value'."""
+    p = plan(changes=[{"action_id": "ACT-002", "reason": "nothing changes"}])
+    _, actions, problems = build(p, state)
+    old = state.action("ACT-002")
+    assert problems == [] and actions[0].model_dump() == old.model_dump()
+
+
+def test_sentinel_values_are_applied(state):
+    p = plan(new=[dict(HOLD, approver="")], changes=[
+        {"action_id": "ACT-002", "reason": "risk rose", "priority": "P2", "focus_related": "false",
+         "timing": "this week", "domains": ["reputational"]}],
+        stakeholders=[{"name": "Retailers", "type": "external", "interest": "", "impact": "", "acme_contact": ""}])
+    parsed, actions, _ = build(p, state)
+    new = next(a for a in actions if a.action_id == "ACT-004")
+    act2 = next(a for a in actions if a.action_id == "ACT-002")
+    assert new.approver is None  # "" -> no approver
+    assert (act2.priority, act2.focus_related, act2.timing, act2.domains) == ("P2", False, "this week", ["reputational"])
+    assert act2.owner == state.action("ACT-002").owner  # "" kept the owner
+    assert a3.contract_stakeholders(parsed)[0].acme_contact is None  # "" -> None in the contract
+
+
+def test_plan_with_a_missing_field_is_invalid():
+    """The fake client must not hide schema problems: a plan without every field is rejected."""
+    with pytest.raises(Exception):
+        a3.A3Plan.model_validate({"new_actions": [], "changes": [{"action_id": "ACT-001", "reason": "x"}],
+                                  "stakeholders": [], "no_action_reasons": []})
+
+
+def test_empty_reason_is_reported(state):
+    _, actions, problems = build(plan(new=[dict(HOLD, reason=" ")]), state)
+    assert actions == [] and "needs a reason" in problems[0]
 
 
 def test_new_action_gets_next_id_and_history_for_this_version(state):
@@ -241,9 +335,10 @@ def test_duplicate_of_existing_action_is_rejected(state):
 
 
 def test_focus_related_required_for_every_live_action_when_focus_is_set(state):
-    p = plan(new=[dict(HOLD, focus_related=None)])
+    p = plan(new=[HOLD])  # existing ACT-001..003 have no focus_related yet and no change sets it
     problems = hard(p, state)
-    assert any("set focus_related" in x and "ACT-001" in x and "ACT-004" in x for x in problems)
+    assert any("set focus_related" in x and all(i in x for i in ("ACT-001", "ACT-002", "ACT-003")) for x in problems)
+    assert not any("set focus_related" in x and "ACT-004" in x for x in problems)  # new actions always carry a bool
 
 
 @pytest.mark.parametrize("text", [

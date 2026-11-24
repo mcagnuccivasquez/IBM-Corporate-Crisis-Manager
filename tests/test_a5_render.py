@@ -63,6 +63,18 @@ def test_v1_says_initial_assessment(state):
     assert "Initial assessment" in render.render_html(state)
 
 
+def test_v1_badge_shows_only_the_current_level(state):
+    """Session 4 (Matteo): no '— → HIGH' on the first report; 'previous → current' from v2."""
+    import re
+    html = render.render_html(state)
+    badge = re.search(r'<span class="risk-value">(.*?)</span>\s*</div>', html, re.S).group(1)
+    assert "→" not in badge and "—" not in badge and "HIGH" in badge
+    assert "previous version: —" not in html and "— →" not in html
+    v2 = render.render_html(make_v2(state, "Critical"))
+    badge2 = re.search(r'<span class="risk-value">(.*?)</span>\s*</div>', v2, re.S).group(1)
+    assert "High</span> → CRITICAL" in badge2
+
+
 def test_v2_explains_unchanged_level(state):
     html = render.render_html(make_v2(state, "High"))
     assert "Initial assessment" not in html
