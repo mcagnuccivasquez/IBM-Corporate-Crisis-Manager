@@ -15,9 +15,9 @@ _Last updated: 2026-11-23 18:35 · by: Matteo (reviews + D-015 session)_
 | A0 Orchestrator (`pipeline.py`, `app.py`, `diff.py`) + integration | A0 | **Matteo** | in progress | App runs real A0, A1, A2, risk, A3, A5 + PDF (A4 still stub). Next: first live S1 run, read cost in `trace.jsonl`; demo prep |
 | A1 Evidence Analyst | A1 | **Giacomo** | done (PR #8) | Follow-up PR: attachment paths → `Source.file`; register cited KB sources with `kb_source` |
 | A2a/b/c Impact assessors + `risk.py` | A2 | **Junda** | done (PR #6) | Check live S1 scores against the scenario's expected levels |
-| A3 Action Planner | A3 | **Serdar** | in review (fix PR) | Live-API schema fix on `serdar/a3-schema-demo-fixes` (all plan fields required, no nullable; offline guard test). Next: Matteo merges + one live A3 call; prompt fixes 4–5 |
+| A3 Action Planner | A3 | **Serdar** | in review (PR #13) | Live-API schema fix on `serdar/a3-schema-demo-fixes` (all plan fields required, no nullable; offline guard test). Next: Matteo merges + one live A3 call; prompt fixes 4–5 |
 | A4 Critic & Outlook | A4 | **Alibek** | not started | Starts 25 Nov; consider reusing A5's `check_other_agents` as a free first pass; fix S1 using ACT-001 for two actions |
-| A5 Report Writer (template + PDF) | A5 | **Serdar** | in review (fix PR) | v1 badge fixed, "confirmed" check now hard, checks.py merge damage repaired (same fix PR). Next: follow-up PR for number check (skip dates/IDs) + full names |
+| A5 Report Writer (template + PDF) | A5 | **Serdar** | in review (PR #13) | v1 badge fixed, "confirmed" check now hard, checks.py merge damage repaired (same fix PR). Next: follow-up PR for number check (skip dates/IDs) + full names |
 | Test scenarios S1–S3 + fixture states (QA lead) | A4 | **Alibek** | done (PR #7) | Fix S1 action IDs (see A4 row) |
 
 _Assignment proposed by the director on 2026-11-21. Swap freely, but update this table._
